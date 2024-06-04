@@ -26,3 +26,54 @@ var DEFINE = {
   10: {time: 120, enemy: ["Devil", "Death1", "Death2"]},
 };
 
+var TreasureList = ["coin", "goldbar", "crown", "ring"];
+var EnemyList = {
+  Snake: {
+    speed: 4,
+    foreSight: 4,
+    probability: 40,
+    score: 10
+  },
+  Skeleton: {
+    speed: 4,
+    foreSight: 2,
+    probability: 60,
+    score: 20
+  },
+  Skeleton4: {
+    speed: 6,
+    foreSight: 3,
+    probability: 80,
+    score: 25
+  },
+  ghost4: {
+    speed: 6,
+    foreSight: 2,
+    probability: 90,
+    score: 50
+  },
+  Zombie: {
+    speed: 6,
+    foreSight: 1,
+    probability: 95,
+    score: 50
+  },
+  Devil: {
+    speed: 8,
+    foreSight: 2,
+    probability: 95,
+    score: 100
+  },
+  Death1: {
+    speed: 12,
+    foreSight: 3,
+    probability: 75,
+    score: 250
+  },
+  Death2: {
+    speed: 12,
+    foreSight: 1,
+    probability: 99,
+    score: 500
+  }
+};[]

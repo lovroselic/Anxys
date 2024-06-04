@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+
+
+<head>
+    <!-- bootstrap, css -->
+    <meta charset="UTF-8">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-gH2yIJqKdNHPEq0n4Mqa/HGKIhSkIHeL5AyhkYV8i59U5AR6csBvApHHNl/vI1Bx" crossorigin="anonymous">
+    <link href="/CSS/LaughingStyle.css" rel="stylesheet" type="text/css">
+    <!-- END -->
+    <title>Anxys</title>
+
+</head>
+
+<body>
+    <!-- copy start-->
+    <div id="preload" class="hidden"></div>
+
+    <div class="container my-5 p-2 cool_page">
+        <div id="setup">
+            <div id="load"></div>
+            <div class="row win" style="font-family: 'Annie'; font-size: 22px">
+                <div class="col-12 col-lg-8 my-2 ">
+                    <h1 id="title"></h1>
+                    <p>You are a ghost. And as everybody knows, ghost are greedy. So are you. You can not resist entering
+                        the
+                        ancient tombs to grab some treasure. So here we go ...</p>
+                </div>
+                <div class="col-12 col-lg-4 my-2 white_text d-flex justify-content-center" id="SC">
+                </div>
+            </div>
+            <div class="row my-5">
+                <div id="debug" class="section">
+                    <fieldset>
+                        <legend>
+                            Version:
+                        </legend>
+                        ENGINE: <span id="engine_version"></span><br>
+                        Prototype LIB: <span id="lib_version"></span><br>
+                        GRID: <span id="grid_version"></span><br>
+                        IAM: <span id="iam_version"></span><br>
+                    </fieldset>
+
+                </div>
+            </div>
+
+            <p id="buttons">
+                <input type='button' id='pause' value='Pause Game [F4]' disabled="disabled">
+                <input type='button' id='toggleHelp' value='Show/Hide Instructions'>
+                <input type='button' id='toggleAbout' value='About'>
+                <input type='button' id='toggleVersion' value='Version'>
+            </p>
+
+            <div id="help" class="section">
+                <fieldset>
+                    <legend>
+                        Instructions:
+                    </legend>
+                    <p>Use <kbd>cursor keys</kbd> to guide the ghost.</p>
+                    <p>Shoot left and right using <kbd>A</kbd> and <kbd>D</kbd> key.</p>
+                    <p>Press <kbd>space</kbd> to have a wish granted - once per level. There is only one thing for you to wish -
+                        for all your enemies to die.</p>
+                    <p>Clear the stage within allocated time, or else ...</p>
+                    <p>You might even get extra life when you reach certain score.</p>
+
+                </fieldset>
+            </div>
+
+            <div id="about" class="section">
+                <fieldset>
+                    <legend>
+                        About:
+                    </legend>
+                    <div class='row '>
+                        <div class="col-12 col-lg-3 my-2 d-flex align-items-center justify-content-center">
+
+                            <image src="https://www.arcade-museum.com/images-game/36/tutankham-36223.jpg" alt="Tutankham"
+                                class="img-fluid  border-dark rounded-2" title="Tutankham">
+                            </image>
+                        </div>
+
+                        <div class="col-12 col-lg-6 my-2">
+                            <p>Anxys is not hiding that it is a clone of <a
+                                    href="https://www.arcade-museum.com/game_detail.php?game_id=10227"
+                                    target="_blank">Tutanhham</a>, legendary console game from 1982.
+                                The game ate a lot of my coins back in the day and had anxious and stressful gameplay -
+                                hence the name of my clone. The first four levels are almost verbatim copy of original.
+                            </p>
+                            <p>Source of graphics are various free resource sites. No copyrighted images were intendedly
+                                used in the making of the game. Code is written in JavaScript using JQuery library.</p>
+                        </div>
+
+                        <div class="col-12 col-lg-3 my-2 d-flex align-items-center justify-content-center">
+
+                            <image src="https://www.arcade-museum.com/images-game/36/tutankham-36224.jpg" alt="Tutankham"
+                                class="img-fluid  border-dark rounded-2" title="Tutankham">
+                            </image>
+                        </div>
+                    </div>
+                </fieldset>
+            </div>
+
+            <p class="version cb" id="version"></p>
+        </div>
+        <!-- END CONTENT  -->
+    </div>
+    <div class="container">
+        <div id="game" class="winTrans"></div>
+        <div id="bottom" class="cb" style="margin-top: 720px"></div>
+        <div id="temp" class="hidden"></div>
+        <div id="temp2" class="hidden"></div>
+    </div>
+    <!-- COPY END -->
+    [
+    <!-- External JS -->
+    <script src="/External/bootstrap.bundle.min.js"></script>
+    <script src="/External/jquery-3.6.0.min.js"></script>
+    <!-- JS -->
+    <script src="/Code/JS/Library/Engine/Prototype_4_03.js" type="text/javascript"></script>
+    <script src="/Code/JS/Library/Engine/ENGINE_4_10.js" type="text/javascript"></script>
+    <script src="/Code/JS/Library/Engine/GRID_3_13.js" type="text/javascript"></script>
+    <script src="/Code/JS/Library/Misc/score_1_05.js" type="text/javascript"></script>
+    <script src="/Assets/Definitions/Anxys/assets_anxys.js" type="text/javascript"></script>
+    <script src="/Assets/Definitions/Anxys/map_anxys.js" type="text/javascript"></script>
+    <script src="/Games/Anxys/anxys.js" type="text/javascript"></script>
+</body>
+
+</html>

@@ -9,12 +9,13 @@
 
  */
 ////////////////////////////////////////////////////
-var DEBUG = {
+const DEBUG = {
   FRAME: 0,
   INF_LIVES: false,
   INF_LAMPS: false
 };
-var INI = {
+
+const INI = {
   titleHeight: 120,
   bottomHeight: 40,
   HERO_SPEED: 8,
@@ -35,106 +36,221 @@ var INI = {
   TIME_BONUS: 250,
   LAST_LEVEL: 10
 };
-var PRG = {
-  VERSION: "1.01",
+
+class Nest {
+  constructor(homeGrid, angle) {
+    this.homeGrid = homeGrid;
+    this.angle = angle;
+  }
+  static toClass(obj) {
+    return new Nest(obj.homeGrid, obj.angle);
+  }
+  same(grid) {
+    if (grid.x === this.homeGrid.x && grid.y === this.homeGrid.y) {
+      return true;
+    } else return false;
+  }
+  getDir() {
+    var x, y;
+    switch (this.angle) {
+      case 0:
+        x = 0;
+        y = -1;
+        break;
+      case 90:
+        x = 1;
+        y = 0;
+        break;
+      case 180:
+        x = 0;
+        y = 1;
+        break;
+      case 270:
+        x = -1;
+        y = 0;
+        break;
+    }
+    return new Vector(x, y);
+  }
+}
+
+class Warp {
+  constructor(gridA, gridB) {
+    var empty = { x: -1, y: -1, angle: -1 };
+    this.gridA = gridA || empty;
+    this.gridB = gridB || empty;
+    this.isComplete();
+  }
+  static toClass(obj) {
+    return new Warp(obj.gridA, obj.gridB);
+  }
+  same(grid) {
+    if (grid.x === this.gridA.x && grid.y === this.gridA.y) {
+      return "gridA";
+    } else if (grid.x === this.gridB.x && grid.y === this.gridB.y) {
+      return "gridB";
+    } else return -1;
+  }
+  isComplete() {
+    if (this.gridA.angle != -1 && this.gridB.angle != -1) {
+      this.complete = true;
+    } else {
+      this.complete = false;
+    }
+    return this.complete;
+  }
+  update(gridB) {
+    this.gridB = gridB;
+    this.isComplete();
+  }
+}
+
+class Gate {
+  constructor(homeGrid) {
+    this.homeGrid = homeGrid;
+  }
+  static toClass(obj) {
+    return new Gate(obj.homeGrid);
+  }
+  same(grid) {
+    if (grid.x === this.homeGrid.x && grid.y === this.homeGrid.y) {
+      return true;
+    } else return false;
+  }
+  value() {
+    return 1000;
+  }
+}
+
+class Key {
+  constructor(homeGrid) {
+    this.homeGrid = homeGrid;
+  }
+  static toClass(obj) {
+    return new Key(obj.homeGrid);
+  }
+  same(grid) {
+    if (grid.x === this.homeGrid.x && grid.y === this.homeGrid.y) {
+      return true;
+    } else return false;
+  }
+  value() {
+    return 500;
+  }
+}
+
+class Treasure {
+  constructor(homeGrid) {
+    this.homeGrid = homeGrid;
+    Treasure.inc();
+    this.id = Treasure.count - 1;
+  }
+  static toClass(obj) {
+    return new Treasure(obj.homeGrid);
+  }
+  static inc() {
+    this.count = this.getCount() + 1;
+  }
+  static dec() {
+    this.count = this.getCount() - 1;
+  }
+  static getCount() {
+    return this.count || 0;
+  }
+  static reset() {
+    this.count = 0;
+  }
+  same(grid) {
+    if (grid.x === this.homeGrid.x && grid.y === this.homeGrid.y) {
+      return true;
+    } else return false;
+  }
+  value() {
+    return 500 * Math.pow(2, this.id);
+  }
+}
+
+const PRG = {
+  VERSION: "1.02.00",
   NAME: "Anxys",
-  INIT: function () {
+  YEAR: "2018",
+  CSS: "color: #239AFF;",
+  INIT() {
     console.clear();
-    console.log(
-      PRG.NAME +
-      " " +
-      PRG.VERSION +
-      " by Lovro Selic, (c) C00lSch00l 2018 on " +
-      navigator.userAgent
-    );
+    console.log("%c**************************************************************************************************************************************", PRG.CSS);
+    console.log(`${PRG.NAME} ${PRG.VERSION} by Lovro Selic, (c) LaughingSkull ${PRG.YEAR} on ${navigator.userAgent}`);
+    console.log("%c**************************************************************************************************************************************", PRG.CSS);
     $("#title").html(PRG.NAME);
-    $("#version").html(
-      PRG.NAME +
-      " V" +
-      PRG.VERSION +
-      " <span style='font-size:14px'>&copy</span> C00lSch00l 2018"
-    );
+    $("#version").html(`${PRG.NAME} V${PRG.VERSION} <span style='font-size:14px'>&copy</span> LaughingSkull ${PRG.YEAR}`);
     $("input#toggleAbout").val("About " + PRG.NAME);
     $("#about fieldset legend").append(" " + PRG.NAME + " ");
-    $("#load").append(
-      "<canvas id ='preload_canvas' width='" +
-      ENGINE.LOAD_W +
-      "' height='" +
-      ENGINE.LOAD_H +
-      "'></canvas>"
-    );
-    ENGINE.ctx = $("#preload_canvas")[0].getContext("2d");
+
+    ENGINE.autostart = true;
+    ENGINE.start = PRG.start;
     ENGINE.readyCall = GAME.setup;
     ENGINE.init();
+
   },
-  setup: function () {
+  setup() {
+    $("#engine_version").html(ENGINE.VERSION);
+    $("#grid_version").html(GRID.VERSION);
+    //$("#iam_version").html(IndexArrayManagers.VERSION);
+    $("#lib_version").html(LIB.VERSION);
+
     $("#toggleHelp").click(function () {
       $("#help").toggle(400);
     });
     $("#toggleAbout").click(function () {
       $("#about").toggle(400);
     });
-  },
-  start: function () {
-    console.log(PRG.NAME + " started.");
-    $("#startGame").addClass("hidden");
-    var disableKeys = ["enter", "space"];
-    for (let key in disableKeys) ENGINE.disableKey(key);
+    $("#toggleVersion").click(function () {
+      $("#debug").toggle(400);
+    });
 
-    //add boxes
-    if (!GAME.restarted) {
-      console.log("Adding boxes, setting ENGINE ....");
-      ENGINE.gameWIDTH = 960;
-      ENGINE.gameHEIGHT = 576;
-      ENGINE.checkProximity = false;
-      ENGINE.checkIntersection = false;
-      ENGINE.INI.COLLISION_SAFE = 50;
-      $(ENGINE.gameWindowId).width(ENGINE.gameWIDTH + 4);
-      ENGINE.addBOX(
-        "TITLE",
-        ENGINE.gameWIDTH,
-        INI.titleHeight,
-        ["title", "minimap", "dynamic_map", "key", "score", "time"],
-        null
-      );
-      ENGINE.addBOX(
-        "ROOM",
-        ENGINE.gameWIDTH,
-        ENGINE.gameHEIGHT,
-        ["background", "static", "hell", "hero", "animation", "enemy", "laser", "explosion", "text", "dyntext"],
-        null
-      );
-      ENGINE.addBOX(
-        "BOTTOM",
-        ENGINE.gameWIDTH,
-        INI.bottomHeight,
-        ["bottom", "lives", "lamp"],
-        null
-      );
-      ENGINE.addBOX(
-        "LEVEL",
-        ENGINE.gameWIDTH,
-        ENGINE.gameHEIGHT,
-        ["floor", "wall", "nest", "template_static", "template_dynamic"],
-        null
-      );
-      $("#LEVEL").addClass("hidden");
-    }
+    ENGINE.gameWIDTH = 960;
+    ENGINE.gameHEIGHT = 576;
+    ENGINE.titleHEIGHT = INI.titleHeight;
+    ENGINE.bottomHEIGHT = INI.bottomHeight;
+    //ENGINE.checkProximity = false;
+    //ENGINE.checkIntersection = false;
+    //ENGINE.INI.COLLISION_SAFE = 50;
+
+    $(ENGINE.gameWindowId).width(ENGINE.gameWIDTH + 4);
+    ENGINE.addBOX("TITLE", ENGINE.gameWIDTH, ENGINE.titleHEIGHT, ["title", "minimap", "dynamic_map", "key", "score", "time"]);
+    ENGINE.addBOX("ROOM", ENGINE.gameWIDTH, ENGINE.gameHEIGHT, ["background", "static", "hell", "hero", "animation", "enemy", "laser", "explosion", "text", "dyntext", "button"]);
+    ENGINE.addBOX("DOWN", ENGINE.gameWIDTH, ENGINE.bottomHEIGHT, ["bottom", "lives", "lamp", "bottomText"]);
+    ENGINE.addBOX("LEVEL", ENGINE.gameWIDTH, ENGINE.gameHEIGHT, ["floor", "wall", "nest", "template_static", "template_dynamic"]);
+
+    //$("#LEVEL").addClass("hidden");
+  },
+
+  start() {
+    console.log(PRG.NAME + " started.");
+
+    $("#startGame").addClass("hidden");
+    $(document).keypress(function (event) {
+      if (event.which === 32 || event.which === 13) {
+        event.preventDefault();
+      }
+    });
+
+
     //
-    GAME.start();
+    //GAME.start();
+    TITLE.startTitle();
   }
 };
 
-var HERO = {
-  update: function () {
+const HERO = {
+  update() {
     HERO.draw();
   },
-  useLamp: function () {
+  useLamp() {
     if (!DEBUG.INF_LAMPS) HERO.lamp = false;
     TITLE.lamp();
     ENEMY.killAll();
   },
-  move: function (dir) {
+  move(dir) {
     var BX = HERO.actor.x;
     var BY = HERO.actor.y;
     HERO.moved = true;
@@ -277,7 +393,7 @@ var HERO = {
       if (label === "gridB") return "gridA";
     }
   },
-  draw: function () {
+  draw() {
     if (!HERO.moved) return;
     ENGINE.clearLayer("hero");
     if (HERO.dead) return;
@@ -289,7 +405,7 @@ var HERO = {
     );
     HERO.moved = false;
   },
-  startInit: function () {
+  startInit() {
     HERO.speed = INI.HERO_SPEED;
     HERO.spriteClass = "ghost1";
     HERO.asset = ASSET[HERO.spriteClass];
@@ -309,7 +425,7 @@ var HERO = {
     HERO.canShoot = false;
     HERO.dead = false;
   },
-  init: function () {
+  init() {
     GRID.gridToSprite(MAP[GAME.level].start, HERO.actor);
     ENGINE.VIEWPORT.alignTo(HERO.actor);
     HERO.hasKey = false;
@@ -320,7 +436,7 @@ var HERO = {
     HERO.down = MAP[GAME.level].ph - HERO.up;
     HERO.contMove = false; //
   },
-  shoot: function (dir) {
+  shoot(dir) {
     if (!HERO.canShoot) return;
     var check = LASER.check(dir.x);
     if (check) return;
@@ -328,7 +444,7 @@ var HERO = {
     var x = HERO.actor.x + ENGINE.INI.GRIDPIX / 4 * dir.x;
     LASER.pool.push(new Laser(new Point(x, y), dir.x, HERO.homeGrid));
   },
-  die: function () {
+  die() {
     if (HERO.dead) return;
     ENGINE.GAME.stopAnimation = true;
     GAME.timeRemains = GAME.timeLeft;
@@ -345,7 +461,7 @@ var HERO = {
       setTimeout(GAME.levelContinue, INI.DEATH_TIMEOUT);
     }
   },
-  paintDeath: function () {
+  paintDeath() {
     ENGINE.clearLayer("hero");
     var CTX = LAYER.hero;
     ENGINE.spriteDraw("hero", HERO.actor.vx, HERO.actor.vy, SPRITE.skull);
@@ -355,7 +471,7 @@ var HERO = {
     ENGINE.GAME.stopAnimation = false;
     ENGINE.GAME.run(HERO.deadHeroAnimation);
   },
-  deadHeroAnimation: function () {
+  deadHeroAnimation() {
     EXPLOSIONS.draw();
     if (EXPLOSIONS.pool.length === 0) {
       ENGINE.GAME.stopAnimation = true;
@@ -364,9 +480,9 @@ var HERO = {
   }
 };
 
-var LASER = {
+const LASER = {
   pool: [],
-  check: function (dir) {
+  check(dir) {
     var LPL = LASER.pool.length;
     var check = false;
     for (let q = 0; q < LPL; q++) {
@@ -377,7 +493,7 @@ var LASER = {
     }
     return check;
   },
-  draw: function () {
+  draw() {
     var LPL = LASER.pool.length;
     if (LPL === 0) return;
     ENGINE.layersToClear.add("laser");
@@ -485,15 +601,15 @@ class MonsterClass {
   }
 }
 
-var NEST = {
+const NEST = {
   canSpawn: false,
-  timeout: function () {
+  timeout() {
     NEST.canSpawn = false;
     setTimeout(function () {
       NEST.canSpawn = true;
     }, INI.SPAWN_DELAY);
   },
-  manage: function () {
+  manage() {
     if (ENEMY.pool.length >= INI.MAX_ENEMIES) return;
     if (!NEST.canSpawn) return;
     var nest = NEST.selectNest();
@@ -514,7 +630,7 @@ var NEST = {
       NEST.timeout();
     }
   },
-  selectNest: function () {
+  selectNest() {
     var nests = NEST.findVisible();
     var NPL = nests.length;
     for (let q = NPL - 1; q >= 0; q--) {
@@ -544,13 +660,13 @@ var NEST = {
       arr.length = q;
     }
   },
-  distance: function (nest) {
+  distance(nest) {
     return (
       Math.abs(HERO.homeGrid.x - nest.homeGrid.x) +
       Math.abs(HERO.homeGrid.y - nest.homeGrid.y)
     );
   },
-  findVisible: function () {
+  findVisible() {
     var nest = MAP[GAME.level].nest;
     var visible = [];
     var NL = nest.length;
@@ -563,7 +679,7 @@ var NEST = {
     }
     return visible;
   },
-  isFree: function (nest) {
+  isFree(nest) {
     var free = true;
     var EPL = ENEMY.pool.length;
     for (let q = 0; q < EPL; q++) {
@@ -575,16 +691,17 @@ var NEST = {
     return free;
   }
 };
-var ENEMY = {
+
+const ENEMY = {
   pool: [],
-  collideHero: function () {
+  collideHero() {
     var EPL = ENEMY.pool.length;
     for (let q = 0; q < EPL; q++) {
       let hit = ENGINE.collision(HERO.actor, ENEMY.pool[q].actor);
       if (hit) HERO.die();
     }
   },
-  killAll: function () {
+  killAll() {
     var EPL = ENEMY.pool.length;
     for (let q = EPL - 1; q >= 0; q--) {
       let enemy = ENEMY.pool[q];
@@ -595,7 +712,7 @@ var ENEMY = {
     }
     ENEMY.pool.clear();
   },
-  collideLaser: function () {
+  collideLaser() {
     var EPL = ENEMY.pool.length;
     if (EPL === 0) return;
     for (let q = EPL - 1; q >= 0; q--) {
@@ -617,7 +734,7 @@ var ENEMY = {
       }
     }
   },
-  draw: function () {
+  draw() {
     var EPL = ENEMY.pool.length;
     if (EPL === 0) return;
     var CXT = LAYER.enemy;
@@ -631,7 +748,7 @@ var ENEMY = {
       );
     }
   },
-  move: function () {
+  move() {
     var EPL = ENEMY.pool.length;
     if (EPL === 0) return;
     for (let q = EPL - 1; q >= 0; q--) {
@@ -899,8 +1016,9 @@ var ENEMY = {
     }
   }
 };
-var GAME = {
-  start: function () {
+
+const GAME = {
+  start() {
     GAME.extraLife = SCORE.extraLife.clone();
     ENGINE.GAME.start(); //INIT game loop
     ENGINE.KEY.on(); // keymapping active
@@ -914,12 +1032,12 @@ var GAME = {
     HERO.startInit();
     GAME.levelStart();
   },
-  prepareForRestart: function () {
+  prepareForRestart() {
     //everything required for safe restart
     ENGINE.clearLayer("text");
     MAP = $.extend(true, {}, BACKUP_MAP);
   },
-  levelContinue: function () {
+  levelContinue() {
     console.log("LEVEL", GAME.level, "continues ...");
     HERO.dead = false;
     ENEMY.pool.clear();
@@ -934,7 +1052,7 @@ var GAME = {
     GAME.timeStart = Date.now();
     ENGINE.GAME.run(GAME.run);
   },
-  levelStart: function () {
+  levelStart() {
     console.log("starting level", GAME.level);
     ENGINE.VIEWPORT.reset();
     GAME.initLevel(GAME.level);
@@ -951,7 +1069,7 @@ var GAME = {
     ENGINE.GAME.stopAnimation = false;
     ENGINE.GAME.run(GAME.run);
   },
-  nextLevel: function () {
+  nextLevel() {
     GAME.level++;
     console.log("creating next level: ", GAME.level);
     ENGINE.clearLayer("text");
@@ -964,7 +1082,7 @@ var GAME = {
       GAME.end();
     } else GAME.levelStart();
   },
-  levelEnd: function () {
+  levelEnd() {
     console.log("level ", GAME.level, " ended.");
     HERO.canShoot = false;
     ENGINE.GAME.stopAnimation = true;
@@ -976,7 +1094,7 @@ var GAME = {
       ENGINE.GAME.run(TITLE.run);
     }, ENGINE.INI.ANIMATION_INTERVAL * 2);
   },
-  initLevel: function (level) {
+  initLevel(level) {
     MAP[level].grid = GRID.map.unpack(MAP[level]);
     MAP[level].pw = MAP[level].width * ENGINE.INI.GRIDPIX;
     MAP[level].ph = MAP[level].height * ENGINE.INI.GRIDPIX;
@@ -998,14 +1116,14 @@ var GAME = {
       MAP[level].treasure[z] = Treasure.toClass(MAP[level].treasure[z]);
     }
   },
-  updateVieport: function () {
+  updateVieport() {
     if (!ENGINE.VIEWPORT.changed) return;
     ENGINE.VIEWPORT.change("floor", "background");
     ENGINE.clearLayer("static");
     ENGINE.VIEWPORT.change("template_static", "static");
     ENGINE.VIEWPORT.changed = false;
   },
-  frameDraw: function () {
+  frameDraw() {
     ENGINE.clearLayerStack();
     GAME.updateVieport();
     GAME.drawAnimation();
@@ -1016,7 +1134,7 @@ var GAME = {
     TITLE.score();
     TITLE.updateTime();
   },
-  updateStatic: function (level) {
+  updateStatic(level) {
     level = level || GAME.level;
     ENGINE.clearLayer("template_static");
     GRID.paintDoor(MAP[level].door, "template_static", false);
@@ -1028,11 +1146,11 @@ var GAME = {
       TreasureList
     );
   },
-  drawAnimation: function () {
+  drawAnimation() {
     TEXTPOOL.draw("animation");
     SpritePOOL.draw("animation");
   },
-  firstFrameDraw: function (level) {
+  firstFrameDraw(level) {
     ENGINE.resizeBOX("LEVEL", MAP[level].pw, MAP[level].ph);
     GRID.repaint(
       MAP[level].grid,
@@ -1052,7 +1170,7 @@ var GAME = {
     HERO.draw();
     MINIMAP.draw();
   },
-  wait: function () {
+  wait() {
     if (ENGINE.GAME.stopAnimation) return;
     var map = ENGINE.GAME.keymap;
     if (map[ENGINE.KEY.map.enter]) {
@@ -1065,7 +1183,7 @@ var GAME = {
       return;
     }
   },
-  run: function () {
+  run() {
     //GAME.run() template
     if (ENGINE.GAME.stopAnimation) return;
     //do all game loop stuff here
@@ -1077,7 +1195,7 @@ var GAME = {
     ENEMY.collideHero();
     GAME.frameDraw();
   },
-  respond: function () {
+  respond() {
     //GAME.respond() template
     if (HERO.dead) return;
     var map = ENGINE.GAME.keymap;
@@ -1127,15 +1245,15 @@ var GAME = {
     if (HERO.contMove) HERO.move(HERO.dir);
     return;
   },
-  setup: function () {
+  setup() {
     console.log("GAME SETUP started");
   },
-  end: function () {
+  end() {
     console.log("GAME ENDED");
     //check score
     GAME.checkScore();
   },
-  checkScore: function () {
+  checkScore() {
     setTimeout(function () {
       SCORE.checkScore(GAME.score);
       SCORE.hiScore();
@@ -1143,31 +1261,120 @@ var GAME = {
       $("#startGame").removeClass("hidden");
       GAME.restarted = true;
     }, 1000);
-  }
+  },
+  setTitle() {
+    const text = GAME.generateTitleText();
+    const RD = new RenderData("Annie", 16, "#0E0", "bottomText");
+    const SQ = new RectArea(0, 0, LAYER.bottomText.canvas.width, LAYER.bottomText.canvas.height);
+    GAME.movingText = new MovingText(text, 4, RD, SQ);
+  },
+  generateTitleText() {
+    let text = `${PRG.NAME} ${PRG.VERSION
+      }, a game by Lovro Selič, ${"\u00A9"} LaughingSkull ${PRG.YEAR
+      }. 
+             
+            Music: '' written and performed by LaughingSkull, ${"\u00A9"
+      } ### Lovro Selič. `;
+    text += "     ENGINE, GRID, IAM, .... and GAME code by Lovro Selič using JavaScript. ";
+    text += "     Remastered and ported to ENGINE v4 in 2024. ";
+    text = text.split("").join(String.fromCharCode(8202));
+    return text;
+  },
+  runTitle() {
+    if (ENGINE.GAME.stopAnimation) return;
+    GAME.movingText.process();
+    GAME.titleFrameDraw();
+  },
+  titleFrameDraw() {
+    GAME.movingText.draw();
+  },
 };
-var TITLE = {
+
+const TITLE = {
+  startTitle() {
+    console.log("starting title");
+    ENGINE.clearManylayers([]);
+    if (AUDIO.Title) TITLE.music();
+    TITLE.backs();
+    ENGINE.draw("background", (ENGINE.gameWIDTH - TEXTURE.Title.width) / 2, (ENGINE.gameHEIGHT - TEXTURE.Title.height) / 2, TEXTURE.Title);
+    TITLE.mainTitle();
+    ENGINE.topCanvas = ENGINE.getCanvasName("ROOM");
+    TITLE.drawButtons();
+    $("#DOWN")[0].scrollIntoView();
+    GAME.setTitle();
+    ENGINE.GAME.start(16);
+    ENGINE.GAME.ANIMATION.next(GAME.runTitle);
+  },
+  drawButtons() {
+    ENGINE.clearLayer("button");
+    FORM.BUTTON.POOL.clear();
+    const w = 166;
+    const h = 24;
+    let x = 16;
+    let y = ENGINE.gameHEIGHT - (3 * h);
+
+    let startBA = new Area(x, y, w, h);
+    const buttonColors = new ColorInfo("#F00", "#A00", "#222", "#666", 13);
+    const musicColors = new ColorInfo("#0E0", "#090", "#222", "#666", 13);
+    FORM.BUTTON.POOL.push(new Button("Start game", startBA, buttonColors, GAME.start));
+    y += 1.8 * h;
+    let music = new Area(x, y, w, h);
+    FORM.BUTTON.POOL.push(new Button("Play title music", music, musicColors, TITLE.music));
+    FORM.BUTTON.draw();
+    $(ENGINE.topCanvas).on("mousemove", { layer: ENGINE.topCanvas }, ENGINE.mouseOver);
+    $(ENGINE.topCanvas).on("click", { layer: ENGINE.topCanvas }, ENGINE.mouseClick);
+  },
   stack: {
     x: 0,
     y: 0
   },
-  main: function () {
+  main() {
     TITLE.title();
     TITLE.bottom();
     TITLE.stage();
     TITLE.time();
     TITLE.hiScore();
   },
-  title: function () {
-    var CTX = LAYER.title;
-    TITLE.background();
-    var fs = 42;
+  mainTitle() {
+    const CTX = LAYER.title;
+    const fs = 60;
     CTX.font = fs + "px Garamond";
-    var txt = CTX.measureText(PRG.NAME);
-    var x = 32;
-    var y = fs + 10;
-    var gx = x - txt.width / 2;
-    var gy = y - fs;
-    var grad = CTX.createLinearGradient(gx, gy + 10, gx, gy + fs);
+    const txt = CTX.measureText(PRG.NAME);
+    let x = Math.round((ENGINE.gameWIDTH - txt.width) / 2);
+    let y = fs + 10;
+    const gx = x - txt.width / 2;
+    const gy = y - fs;
+    const grad = CTX.createLinearGradient(gx, gy + 10, gx, gy + fs);
+    grad.addColorStop("0", "#CCC");
+    grad.addColorStop("0.1", "#EEE");
+    grad.addColorStop("0.2", "#DDD");
+    grad.addColorStop("0.3", "#AAA");
+    grad.addColorStop("0.4", "#999");
+    grad.addColorStop("0.5", "#666");
+    grad.addColorStop("0.6", "#888");
+    grad.addColorStop("0.7", "#AAA");
+    grad.addColorStop("0.8", "#BBB");
+    grad.addColorStop("0.9", "#EEE");
+    grad.addColorStop("1", "#CCC");
+    GAME.grad = grad;
+    CTX.fillStyle = grad;
+    CTX.shadowColor = "yellow";
+    CTX.shadowOffsetX = 2;
+    CTX.shadowOffsetY = 2;
+    CTX.shadowBlur = 3;
+    CTX.fillText(PRG.NAME, x, y);
+  },
+  title() {
+    const CTX = LAYER.title;
+    TITLE.titleBack();
+    const fs = 42;
+    CTX.font = fs + "px Garamond";
+    const txt = CTX.measureText(PRG.NAME);
+    let x = 32;
+    let y = fs + 10;
+    const gx = x - txt.width / 2;
+    const gy = y - fs;
+    const grad = CTX.createLinearGradient(gx, gy + 10, gx, gy + fs);
     grad.addColorStop("0", "#CCC");
     grad.addColorStop("0.1", "#EEE");
     grad.addColorStop("0.2", "#DDD");
@@ -1196,43 +1403,27 @@ var TITLE = {
     y += 14;
     CTX.fillText("by Lovro Selič", x, y);
   },
-  background: function () {
-    var CTX = LAYER.title;
-    CTX.fillStyle = "#000";
-    CTX.roundRect(
-      0,
-      0,
-      ENGINE.gameWIDTH,
-      INI.titleHeight,
-      {
-        upperLeft: 20,
-        upperRight: 20,
-        lowerLeft: 0,
-        lowerRight: 0
-      },
-      true,
-      true
-    );
+  backs() {
+    TITLE.background();
+    TITLE.bottom();
+    TITLE.titleBack();
   },
-  bottom: function () {
-    var CTX = LAYER.bottom;
+  titleBack() {
+    const CTX = LAYER.title;
     CTX.fillStyle = "#000";
-    CTX.roundRect(
-      0,
-      0,
-      ENGINE.gameWIDTH,
-      INI.bottomHeight,
-      {
-        upperLeft: 0,
-        upperRight: 0,
-        lowerLeft: 20,
-        lowerRight: 20
-      },
-      true,
-      true
-    );
+    CTX.roundRect(0, 0, ENGINE.gameWIDTH, ENGINE.titleHEIGHT, { upperLeft: 20, upperRight: 20, lowerLeft: 0, lowerRight: 0 }, true, true);
   },
-  stage: function () {
+  background() {
+    const CTX = LAYER.background;
+    CTX.fillStyle = "#000";
+    CTX.roundRect(0, 0, ENGINE.gameWIDTH, ENGINE.gameHEIGHT, { upperLeft: 0, upperRight: 0, lowerLeft: 0, lowerRight: 0 }, true, true);
+  },
+  bottom() {
+    const CTX = LAYER.bottom;
+    CTX.fillStyle = "#000";
+    CTX.roundRect(0, 0, ENGINE.gameWIDTH, ENGINE.bottomHEIGHT, { upperLeft: 0, upperRight: 0, lowerLeft: 20, lowerRight: 20 }, true, true);
+  },
+  stage() {
     var CTX = LAYER.title;
     var x = 500;
     var y = 32;
@@ -1248,20 +1439,20 @@ var TITLE = {
     y = 68;
     CTX.fillText(GAME.level.toString().padLeft(2, "0"), x, y);
   },
-  key: function () {
+  key() {
     var CTX = LAYER.key;
     var x = 432;
     var y = 32;
     var h = 60;
     ENGINE.draw("key", x, y + (h - SPRITE.key.height) / 2, SPRITE.key);
   },
-  time: function () {
+  time() {
     var CTX = LAYER.title;
     var x = 584;
     var y = 32;
     ENGINE.draw("title", x, y, SPRITE.shield);
   },
-  hiScore: function () {
+  hiScore() {
     var CTX = LAYER.title;
     var fs = 16;
     CTX.font = fs + "px Garamond";
@@ -1310,7 +1501,7 @@ var TITLE = {
       TITLE.lives();
     }
   },
-  lamp: function () {
+  lamp() {
     if (HERO.lamp) {
       var CTX = LAYER.lamp;
       var y = CTX.canvas.height / 2;
@@ -1318,7 +1509,7 @@ var TITLE = {
       ENGINE.spriteDraw("lamp", x, y, SPRITE.lamp);
     } else ENGINE.clearLayer("lamp");
   },
-  lives: function () {
+  lives() {
     ENGINE.clearLayer("lives");
     var CTX = LAYER.lives;
     var x = CTX.canvas.width / 2;
@@ -1328,7 +1519,7 @@ var TITLE = {
       ENGINE.spriteDraw("lives", spread[q], y, SPRITE.ghostLives);
     }
   },
-  updateTime: function () {
+  updateTime() {
     if (HERO.dead) return;
     var CTX = LAYER.time;
     ENGINE.clearLayer("time");
@@ -1349,7 +1540,7 @@ var TITLE = {
     var y = 72;
     CTX.fillText(GAME.timeLeft.toString().padLeft(3, "0"), x, y);
   },
-  run: function () {
+  run() {
     if (ENGINE.GAME.stopAnimation) return;
     TITLE.levelEndRefresh();
     if (GAME.timeLeft <= 0) {
@@ -1381,14 +1572,14 @@ var TITLE = {
     GAME.timeBonus += INI.TIME_BONUS;
     TITLE.updateBonusTime();
   },
-  updateBonusTime: function () {
+  updateBonusTime() {
     var CTX = LAYER.time;
     ENGINE.clearLayer("time");
     var x = 632;
     var y = 72;
     CTX.fillText(GAME.timeLeft.toString().padLeft(3, "0"), x, y);
   },
-  levelEndRefresh: function () {
+  levelEndRefresh() {
     var CTX = LAYER.dyntext;
     ENGINE.clearLayer("dyntext");
     var fs = 20;
@@ -1405,7 +1596,7 @@ var TITLE = {
       TITLE.stack.y
     );
   },
-  levelEndTemplate: function () {
+  levelEndTemplate() {
     var width = 350;
     var height = 200;
     var left = Math.floor((ENGINE.gameWIDTH - width) / 2);
@@ -1453,7 +1644,7 @@ var TITLE = {
     TITLE.stack.x = x;
     TITLE.stack.y = y;
   },
-  gameOver: function () {
+  gameOver() {
     ENGINE.clearLayer("text");
     var CTX = LAYER.text;
     CTX.textAlign = "center";
@@ -1483,7 +1674,7 @@ var TITLE = {
     CTX.shadowBlur = 3;
     CTX.fillText("GAME OVER", x, y);
   },
-  gameWon: function () {
+  gameWon() {
     var width = 350;
     var height = 200;
     var left = Math.floor((ENGINE.gameWIDTH - width) / 2);
@@ -1531,10 +1722,11 @@ var TITLE = {
     }
   }
 };
-var MINIMAP = {
+
+/* var MINIMAP = {
   x: 164,
   y: 32,
-  draw: function () {
+  draw() {
     var CTX = LAYER.minimap;
     ENGINE.clearLayer("minimap");
     CTX.fillStyle = "#666";
@@ -1553,7 +1745,7 @@ var MINIMAP = {
       }
     }
   },
-  refresh: function () {
+  refresh() {
     var CTX = LAYER.dynamic_map;
     ENGINE.clearLayer("dynamic_map");
     var EPL = ENEMY.pool.length;
@@ -1580,12 +1772,12 @@ var MINIMAP = {
       ENGINE.gameHEIGHT * factor + 1
     );
   }
-};
+}; */
 
 $(document).ready(function () {
   PRG.INIT();
   PRG.setup();
-  ENGINE.preLoadImages();
+  ENGINE.LOAD.preload();
   SCORE.init("SC", "Anxys", 10, 25000);
   SCORE.loadHS();
   SCORE.hiScore();

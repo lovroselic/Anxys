@@ -1,6 +1,15 @@
-//Assets for Tutankham class games: Anxys
+/* assets for Anxys */
+console.log("Assets for Anxys starting .....");
 
-var BrickWall = new Tile("BrickWall", 128, 128, "jpg");
+LoadTextures = [
+  //title
+  { srcName: "Title/AnxysTitle576.jpg", name: "Title" },
+];
+
+
+console.log("Assets for Anxys completed");
+
+/* var BrickWall = new Tile("BrickWall", 128, 128, "jpg");
 var BrickWall2 = new Tile("BrickWall2", 225, 225, "jpg");
 var BrickWall3 = new Tile("BrickWall3", 200, 200, "jpg");
 var BrickWall4 = new Tile("BrickWall4", 128, 72, "jpg");
@@ -85,9 +94,13 @@ var SExp4 = new Tile("SHIP_exp_04", 130, 125, "png", "ShipExp4");
 var SExp5 = new Tile("SHIP_exp_05", 156, 146, "png", "ShipExp5");
 var SExp6 = new Tile("SHIP_exp_06", 186, 167, "png", "ShipExp6");
 var SExp7 = new Tile("SHIP_exp_07", 148, 131, "png", "ShipExp7");
-var SExp8 = new Tile("SHIP_exp_08", 123, 100, "png", "ShipExp8");
+var SExp8 = new Tile("SHIP_exp_08", 123, 100, "png", "ShipExp8"); */
+
+
 ////Spritesheets
-var ghost1_left = new Tile(
+
+
+/* var ghost1_left = new Tile(
   "ghost1_left",
   192,
   48,
@@ -378,9 +391,9 @@ var Death1_back = new Tile(
   "Death1_back",
   true,
   4
-);
+); */
 
-var World = {
+/* var World = {
   wall: [
     BrickWall,
     BrickWall2,
@@ -497,8 +510,9 @@ var World = {
   ],
   title: [GhostLives, Stage, Shield, Skull, Lamp],
   items: [GoldKey, GoldBar, Crown, Ring, Coin]
-};
-var Creation = [
+}; */
+
+/* var Creation = [
   {
     origin: WarpTile,
     name: "Warp",
@@ -509,9 +523,9 @@ var Creation = [
     name: "Nest",
     angles: [0, 90, 180, 270]
   }
-];
+]; */
 
-var ASSETS = {
+/* var ASSETS = {
   build: function () {
     ASSET.ghost1 = new LiveSPRITE(
       [
@@ -747,187 +761,11 @@ var ASSETS = {
     );
     //
   }
-};
-class Nest {
-  constructor(homeGrid, angle) {
-    this.homeGrid = homeGrid;
-    this.angle = angle;
-  }
-  static toClass(obj) {
-    return new Nest(obj.homeGrid, obj.angle);
-  }
-  same(grid) {
-    if (grid.x === this.homeGrid.x && grid.y === this.homeGrid.y) {
-      return true;
-    } else return false;
-  }
-  getDir() {
-    var x, y;
-    switch (this.angle) {
-      case 0:
-        x = 0;
-        y = -1;
-        break;
-      case 90:
-        x = 1;
-        y = 0;
-        break;
-      case 180:
-        x = 0;
-        y = 1;
-        break;
-      case 270:
-        x = -1;
-        y = 0;
-        break;
-    }
-    return new Vector(x, y);
-  }
-}
-class Warp {
-  constructor(gridA, gridB) {
-    var empty = { x: -1, y: -1, angle: -1 };
-    this.gridA = gridA || empty;
-    this.gridB = gridB || empty;
-    this.isComplete();
-  }
-  static toClass(obj) {
-    return new Warp(obj.gridA, obj.gridB);
-  }
-  same(grid) {
-    if (grid.x === this.gridA.x && grid.y === this.gridA.y) {
-      return "gridA";
-    } else if (grid.x === this.gridB.x && grid.y === this.gridB.y) {
-      return "gridB";
-    } else return -1;
-  }
-  isComplete() {
-    if (this.gridA.angle != -1 && this.gridB.angle != -1) {
-      this.complete = true;
-    } else {
-      this.complete = false;
-    }
-    return this.complete;
-  }
-  update(gridB) {
-    this.gridB = gridB;
-    this.isComplete();
-  }
-}
-class Gate {
-  constructor(homeGrid) {
-    this.homeGrid = homeGrid;
-  }
-  static toClass(obj) {
-    return new Gate(obj.homeGrid);
-  }
-  same(grid) {
-    if (grid.x === this.homeGrid.x && grid.y === this.homeGrid.y) {
-      return true;
-    } else return false;
-  }
-  value() {
-    return 1000;
-  }
-}
-class Key {
-  constructor(homeGrid) {
-    this.homeGrid = homeGrid;
-  }
-  static toClass(obj) {
-    return new Key(obj.homeGrid);
-  }
-  same(grid) {
-    if (grid.x === this.homeGrid.x && grid.y === this.homeGrid.y) {
-      return true;
-    } else return false;
-  }
-  value() {
-    return 500;
-  }
-}
-class Treasure {
-  constructor(homeGrid) {
-    this.homeGrid = homeGrid;
-    Treasure.inc();
-    this.id = Treasure.count - 1;
-  }
-  static toClass(obj) {
-    return new Treasure(obj.homeGrid);
-  }
-  static inc() {
-    this.count = this.getCount() + 1;
-  }
-  static dec() {
-    this.count = this.getCount() - 1;
-  }
-  static getCount() {
-    return this.count || 0;
-  }
-  static reset() {
-    this.count = 0;
-  }
-  same(grid) {
-    if (grid.x === this.homeGrid.x && grid.y === this.homeGrid.y) {
-      return true;
-    } else return false;
-  }
-  value() {
-    return 500 * Math.pow(2, this.id);
-  }
-}
-var TreasureList = ["coin", "goldbar", "crown", "ring"];
-var EnemyList = {
-  Snake: {
-    speed: 4,
-    foreSight: 4,
-    probability: 40,
-    score: 10
-  },
-  Skeleton: {
-    speed: 4,
-    foreSight: 2,
-    probability: 60,
-    score: 20
-  },
-  Skeleton4: {
-    speed: 6,
-    foreSight: 3,
-    probability: 80,
-    score: 25
-  },
-  ghost4: {
-    speed: 6,
-    foreSight: 2,
-    probability: 90,
-    score: 50
-  },
-  Zombie: {
-    speed: 6,
-    foreSight: 1,
-    probability: 95,
-    score: 50
-  },
-  Devil: {
-    speed: 8,
-    foreSight: 2,
-    probability: 95,
-    score: 100
-  },
-  Death1: {
-    speed: 12,
-    foreSight: 3,
-    probability: 75,
-    score: 250
-  },
-  Death2: {
-    speed: 12,
-    foreSight: 1,
-    probability: 99,
-    score: 500
-  }
-};
-class SearchNode {
+}; */
+
+
+
+/* class SearchNode {
   constructor(HG, goal, stack, path) {
     this.grid = HG;
     this.prevDir = stack;
@@ -951,4 +789,4 @@ class NodeQ {
     }
     if (!included) this.list.push(node);
   }
-}
+} */
