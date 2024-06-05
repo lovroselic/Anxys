@@ -2764,7 +2764,13 @@ const $3D_MODEL = {};
 const LAYER = {
   PRELOAD: {}
 };
-const BITMAP = {};
+const BITMAP = {
+  async store(canvas, name) {
+    const img = await createImageBitmap(canvas);
+    BITMAP[name] = img;
+    console.info("BITMAP", BITMAP);
+  }
+};
 const SPRITE = {};
 const AUDIO = {};
 //const TILE = {};    //obsolete

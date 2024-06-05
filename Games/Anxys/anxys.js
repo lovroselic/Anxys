@@ -171,7 +171,7 @@ class Treasure {
 }
 
 const PRG = {
-  VERSION: "1.02.01",
+  VERSION: "1.02.02",
   NAME: "Anxys",
   YEAR: "2018",
   CSS: "color: #239AFF;",
@@ -1112,8 +1112,9 @@ const GAME = {
       ENGINE.GAME.run(TITLE.run);
     }, ENGINE.INI.ANIMATION_INTERVAL * 2);
   },
-  initLevel(level) {
+  async initLevel(level) {
     console.log("init level", level);
+    console.time("init");
 
 
     //MAP[level].grid = GRID.map.unpack(MAP[level]);
@@ -1124,6 +1125,13 @@ const GAME = {
     MAP[level].pw = MAP[level].width * ENGINE.INI.GRIDPIX;
     MAP[level].ph = MAP[level].height * ENGINE.INI.GRIDPIX;
 
+    //setting grahic templates
+    ENGINE.resizeBOX("LEVEL", MAP[level].pw, MAP[level].ph);
+    ENGINE.TEXTUREGRID.configure("floor", "wall", MAP[level].floor, MAP[level].background);
+    ENGINE.TEXTUREGRID.draw(MAP[level].map);
+    await BITMAP.store(LAYER.floor, "floor");
+
+    console.timeEnd("init");
     console.log("MAP", MAP[level]);
     /* 
         for (let z = 0; z <= MAP[level].nest.length - 1; z++) {
@@ -1181,9 +1189,7 @@ const GAME = {
   firstFrameDraw(level) {
     console.log("drawing first frame");
 
-    ENGINE.resizeBOX("LEVEL", MAP[level].pw, MAP[level].ph);
-    ENGINE.TEXTUREGRID.configure("floor", "wall", MAP[level].floor, MAP[level].background);
-    ENGINE.TEXTUREGRID.draw(MAP[level].map);
+
 
     /*     GRID.repaint(
           MAP[level].grid,
