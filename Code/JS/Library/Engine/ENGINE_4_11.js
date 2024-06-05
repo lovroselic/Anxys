@@ -43,7 +43,7 @@ const DownRight = new Vector(1, 1);
 const DownLeft = new Vector(-1, 1);
 
 const ENGINE = {
-  VERSION: "4.10",
+  VERSION: "4.11",
   CSS: "color: #0FA",
   INI: {
     ANIMATION_INTERVAL: 16,
@@ -259,11 +259,13 @@ const ENGINE = {
     let CTX = LAYER[copyTo];
     CTX.drawImage(bitmap, orX, orY, orW, orH, 0, 0, orW, orH);
   },
-  flattenLayers(src, dest) {
+  async flattenLayers(src, dest) {
     /** slow, don't use in the game loop! */
     let W = LAYER[dest].canvas.width;
     let H = LAYER[dest].canvas.height;
-    ENGINE.copyLayer(src, dest, 0, 0, W, H, 0, 0, W, H);
+    await BITMAP.store(LAYER[src].canvas, src);
+    //ENGINE.copyLayer(src, dest, 0, 0, W, H, 0, 0, W, H);
+    ENGINE.copyLayerFromBitmap(BITMAP[src], dest, 0, 0, W, H);
   },
   spriteDraw(layer, X, Y, image, offset = new Vector(0, 0)) {
     let CX = offset.x + Math.floor(X - Math.floor(image.width / 2));
@@ -2768,7 +2770,6 @@ const BITMAP = {
   async store(canvas, name) {
     const img = await createImageBitmap(canvas);
     BITMAP[name] = img;
-    console.info("BITMAP", BITMAP);
   }
 };
 const SPRITE = {};
