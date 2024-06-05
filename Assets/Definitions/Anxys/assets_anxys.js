@@ -2,10 +2,24 @@
 console.log("Assets for Anxys starting .....");
 
 LoadTextures = [
+  { srcName: "Wall/BrickWall.jpg", name: "BrickWall" },
+  { srcName: "Wall/BrickWall4.jpg", name: "BrickWall4" },
   //title
   { srcName: "Title/AnxysTitle576.jpg", name: "Title" },
 ];
 
+LoadAudio = [
+  { srcName: "Single Photon's Shadow.mp3", name: "Title" },
+];
+
+LoadFonts = [
+  { srcName: "MoriaCitadel.ttf", name: "Moria" },
+  { srcName: "C64_Pro-STYLE.ttf", name: "C64" },
+  { srcName: "CosmicAlien.ttf", name: "Alien" },
+  { srcName: "ArcadeClassic.ttf", name: "Arcade" },
+  { srcName: "emulogic.ttf", name: "Emulogic" },
+  { srcName: "Adore64.ttf", name: "Adore" },
+];
 
 console.log("Assets for Anxys completed");
 

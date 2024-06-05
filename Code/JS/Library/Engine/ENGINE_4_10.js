@@ -260,6 +260,7 @@ const ENGINE = {
     CTX.drawImage(bitmap, orX, orY, orW, orH, 0, 0, orW, orH);
   },
   flattenLayers(src, dest) {
+    /** slow, don't use in the game loop! */
     let W = LAYER[dest].canvas.width;
     let H = LAYER[dest].canvas.height;
     ENGINE.copyLayer(src, dest, 0, 0, W, H, 0, 0, W, H);

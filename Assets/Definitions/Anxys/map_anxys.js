@@ -13,7 +13,7 @@ var MAP = {
 };
 
 //Time & enemy 
-var DEFINE = {
+const DEFINE = {
   1: {time: 60, enemy: ["Snake", "Snake", "Snake","ghost4"]},
   2: {time: 120, enemy: ["Snake", "Snake", "ghost4"]},
   3: {time: 180, enemy: ["Snake", "Skeleton", "ghost4"]},
