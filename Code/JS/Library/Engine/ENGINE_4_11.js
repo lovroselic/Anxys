@@ -256,6 +256,7 @@ const ENGINE = {
     CTX.drawImage(LAYER[copyFrom].canvas, orX, orY, orW, orH, 0, 0, orW, orH);
   },
   copyLayerFromBitmap(bitmap, copyTo, orX, orY, orW, orH) {
+    if (ENGINE.verbose) console.assert(bitmap instanceof ImageBitmap, "copyLayerFromBitmap - bitmap is not bitmap");
     let CTX = LAYER[copyTo];
     CTX.drawImage(bitmap, orX, orY, orW, orH, 0, 0, orW, orH);
   },
@@ -264,7 +265,6 @@ const ENGINE = {
     let W = LAYER[dest].canvas.width;
     let H = LAYER[dest].canvas.height;
     await BITMAP.store(LAYER[src].canvas, src);
-    //ENGINE.copyLayer(src, dest, 0, 0, W, H, 0, 0, W, H);
     ENGINE.copyLayerFromBitmap(BITMAP[src], dest, 0, 0, W, H);
   },
   spriteDraw(layer, X, Y, image, offset = new Vector(0, 0)) {
@@ -1140,15 +1140,12 @@ const ENGINE = {
       console.log("VIEWPORT:", ENGINE.VIEWPORT.vx, ENGINE.VIEWPORT.vy);
     },
     change(from, to) {
-      ENGINE.copyLayer(
-        from,
-        to,
-        ENGINE.VIEWPORT.vx,
-        ENGINE.VIEWPORT.vy,
-        ENGINE.gameWIDTH,
-        ENGINE.gameHEIGHT
-      );
+      ENGINE.copyLayer(from, to, ENGINE.VIEWPORT.vx, ENGINE.VIEWPORT.vy, ENGINE.gameWIDTH, ENGINE.gameHEIGHT);
     },
+    changeFromBitmap(from, to) {
+      ENGINE.copyLayerFromBitmap(BITMAP[from], to, ENGINE.VIEWPORT.vx, ENGINE.VIEWPORT.vy, ENGINE.gameWIDTH, ENGINE.gameHEIGHT);
+    },
+
     check(actor, max = ENGINE.VIEWPORT.max) {
       var vx = actor.x - ENGINE.gameWIDTH / 2;
       var vy = actor.y - ENGINE.gameHEIGHT / 2;
@@ -2056,7 +2053,7 @@ const ENGINE = {
       CTX.strokeStyle = "#EEE";
       CTX.strokeRect(point.x, point.y, ENGINE.INI.GRIDPIX, ENGINE.INI.GRIDPIX);
     },
-    draw(maze, corr = false) {
+    async draw(maze, corr = false) {
       let t0 = performance.now();
       ENGINE.fill(ENGINE.TEXTUREGRID.floorLayer, ENGINE.TEXTUREGRID.floorTexture);
       ENGINE.fill(ENGINE.TEXTUREGRID.wallLayer, ENGINE.TEXTUREGRID.wallTexture);
@@ -2071,7 +2068,7 @@ const ENGINE = {
           }
         }
       }
-      ENGINE.flattenLayers(ENGINE.TEXTUREGRID.wallLayerString, ENGINE.TEXTUREGRID.floorLayerString);
+      await ENGINE.flattenLayers(ENGINE.TEXTUREGRID.wallLayerString, ENGINE.TEXTUREGRID.floorLayerString);
       ENGINE.BLOCKGRID.decalDraw(maze, ENGINE.TEXTUREGRID.wallLayer);
       if (ENGINE.verbose) console.log(`%cTEXTUREGRID draw ${performance.now() - t0} ms`, ENGINE.CSS);
     },
@@ -2768,13 +2765,12 @@ const LAYER = {
 };
 const BITMAP = {
   async store(canvas, name) {
-    const img = await createImageBitmap(canvas);
-    BITMAP[name] = img;
+    console.assert(canvas.constructor.name === "HTMLCanvasElement", `Bad canvas: ${canvas.constructor.name}, for ${name}`);
+    BITMAP[name] = await createImageBitmap(canvas);
   }
 };
 const SPRITE = {};
 const AUDIO = {};
-//const TILE = {};    //obsolete
 const ASSET = {
   convertToGrayScale(original, target, howmany = 1) {
     ASSET[target] = {};

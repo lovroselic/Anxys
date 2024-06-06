@@ -12,7 +12,8 @@
 const DEBUG = {
   FRAME: 0,
   INF_LIVES: false,
-  INF_LAMPS: false
+  INF_LAMPS: false,
+  FPS: true,
 };
 
 const INI = {
@@ -171,7 +172,7 @@ class Treasure {
 }
 
 const PRG = {
-  VERSION: "1.02.03",
+  VERSION: "1.02.04",
   NAME: "Anxys",
   YEAR: "2018",
   CSS: "color: #239AFF;",
@@ -188,6 +189,7 @@ const PRG = {
     ENGINE.autostart = true;
     ENGINE.start = PRG.start;
     ENGINE.readyCall = GAME.setup;
+    ENGINE.verbose = true;
     ENGINE.init();
 
   },
@@ -221,7 +223,7 @@ const PRG = {
     ENGINE.addBOX("DOWN", ENGINE.gameWIDTH, ENGINE.bottomHEIGHT, ["bottom", "lives", "lamp", "bottomText"]);
     ENGINE.addBOX("LEVEL", ENGINE.gameWIDTH, ENGINE.gameHEIGHT, ["floor", "wall", "nest", "template_static", "template_dynamic"]);
 
-    //$("#LEVEL").addClass("hidden");
+    $("#LEVEL").addClass("hidden");
   },
   start() {
     console.log(PRG.NAME + " started.");
@@ -393,28 +395,18 @@ const HERO = {
     }
   },
   draw() {
+    console.log("HERO MOVED", HERO.moved);
+    console.log(!HERO.moved, HERO.dead);
     if (!HERO.moved) return;
     ENGINE.clearLayer("hero");
     if (HERO.dead) return;
-    ENGINE.spriteDraw(
-      "hero",
-      HERO.actor.vx,
-      HERO.actor.vy,
-      HERO.actor.sprite()
-    );
+    console.info("HERO draw", HERO.actor.vx, HERO.actor.vy, HERO.actor.sprite());
+    ENGINE.spriteDraw("hero", HERO.actor.vx, HERO.actor.vy, HERO.actor.sprite());
     HERO.moved = false;
   },
   startInit() {
     HERO.speed = INI.HERO_SPEED;
-    HERO.spriteClass = "ghost1";
-    HERO.asset = ASSET[HERO.spriteClass];
-    HERO.actor = new ACTOR(
-      HERO.spriteClass,
-      HERO.x,
-      HERO.y,
-      "front",
-      HERO.asset
-    );
+    HERO.actor = new ACTOR("Ghosty", 0, 0, "front", ASSET.Ghosty);
     HERO.w2 = Math.floor(HERO.actor.width / 2);
     HERO.h2 = Math.floor(HERO.actor.height / 2);
     HERO.left = HERO.w2;
@@ -423,17 +415,24 @@ const HERO = {
     HERO.down = MAP[GAME.level].ph - HERO.up;
     HERO.canShoot = false;
     HERO.dead = false;
+    HERO.moved = true;
   },
   init() {
     GRID.gridToSprite(MAP[GAME.level].start, HERO.actor);
+    HERO.moveState = new MoveState(MAP[GAME.level].start, DOWN, MAP[GAME.level].map.GA);
+    ENGINE.VIEWPORT.check(HERO.actor);
     ENGINE.VIEWPORT.alignTo(HERO.actor);
     HERO.hasKey = false;
     //HERO.hasKey = true; //DEBUG
+
     HERO.moved = true;
-    HERO.homeGrid = GRID.coordToGrid(HERO.actor.x, HERO.actor.y);
+    //HERO.homeGrid = GRID.coordToGrid(HERO.actor.x, HERO.actor.y);
+
     HERO.right = MAP[GAME.level].pw - HERO.left;
     HERO.down = MAP[GAME.level].ph - HERO.up;
     HERO.contMove = false; //
+    HERO.canShoot = true;
+    HERO.lamp = true;
   },
   shoot(dir) {
     if (!HERO.canShoot) return;
@@ -1040,10 +1039,10 @@ const GAME = {
     GAME.score = 0;
     GAME.lives = 4;                                       //DEFAULT
 
-    TITLE.title();
-    TITLE.background();
+    //TITLE.title();
+    //TITLE.background();
 
-    //HERO.startInit();
+    HERO.startInit();
     GAME.levelStart(GAME.level);
 
     ENGINE.GAME.ANIMATION.stop();                         //DEBUG
@@ -1069,11 +1068,17 @@ const GAME = {
     GAME.timeStart = Date.now();
     ENGINE.GAME.run(GAME.run);
   },
-  levelStart(level) {
+  async levelStart(level) {
     console.log("starting level", level);
+    GAME.levelCompleted = false;
     ENGINE.VIEWPORT.reset();
-    GAME.initLevel(level);
+    await GAME.initLevel(level);
+
     GAME.firstFrameDraw(level);
+    HERO.init();
+
+    GAME.resume();
+
     /* HERO.init();
     NEST.timeout();
     ENEMY.pool.clear();
@@ -1116,10 +1121,7 @@ const GAME = {
     console.log("init level", level);
     console.time("init");
 
-
-    //MAP[level].grid = GRID.map.unpack(MAP[level]);
     MAP[level].binary = GRID.unpackIntegerMap(MAP[level]);
-
     MAP[level].map = FREE_MAP.create(MAP[level].width, MAP[level].height, null, 2);
     MAP[level].map.GA.importBinaryString(MAP[level].binary);
     MAP[level].pw = MAP[level].width * ENGINE.INI.GRIDPIX;
@@ -1128,8 +1130,8 @@ const GAME = {
     //setting grahic templates
     ENGINE.resizeBOX("LEVEL", MAP[level].pw, MAP[level].ph);
     ENGINE.TEXTUREGRID.configure("floor", "wall", MAP[level].floor, MAP[level].background);
-    ENGINE.TEXTUREGRID.draw(MAP[level].map);
-    await BITMAP.store(LAYER.floor, "floor");
+    await ENGINE.TEXTUREGRID.draw(MAP[level].map);
+    await BITMAP.store(LAYER.floor.canvas, "maze");
 
     console.timeEnd("init");
     console.log("MAP", MAP[level]);
@@ -1154,22 +1156,13 @@ const GAME = {
   },
   updateVieport() {
     if (!ENGINE.VIEWPORT.changed) return;
-    ENGINE.VIEWPORT.change("floor", "background");
-    ENGINE.clearLayer("static");
-    ENGINE.VIEWPORT.change("template_static", "static");
+    ENGINE.VIEWPORT.changeFromBitmap("maze", "background");
+    //ENGINE.VIEWPORT.change("wall", "background");
+    //ENGINE.clearLayer("static");
+    //ENGINE.VIEWPORT.change("template_static", "static");
     ENGINE.VIEWPORT.changed = false;
   },
-  frameDraw() {
-    ENGINE.clearLayerStack();
-    GAME.updateVieport();
-    GAME.drawAnimation();
-    ENEMY.draw();
-    LASER.draw();
-    EXPLOSIONS.draw();
-    MINIMAP.refresh();
-    TITLE.score();
-    TITLE.updateTime();
-  },
+
   updateStatic(level) {
     level = level || GAME.level;
     ENGINE.clearLayer("template_static");
@@ -1188,6 +1181,10 @@ const GAME = {
   },
   firstFrameDraw(level) {
     console.log("drawing first frame");
+    ENGINE.VIEWPORT.changed = true;
+    GAME.updateVieport();
+    TITLE.main();
+    //HERO.draw();
 
 
 
@@ -1222,17 +1219,31 @@ const GAME = {
       return;
     }
   },
-  run() {
+  run(lapsedTime) {
     //GAME.run() template
     if (ENGINE.GAME.stopAnimation) return;
     //do all game loop stuff here
-    GAME.respond();
-    HERO.update();
-    NEST.manage();
-    ENEMY.move();
-    ENEMY.collideLaser();
-    ENEMY.collideHero();
-    GAME.frameDraw();
+    //GAME.respond();
+    //HERO.update();
+    //NEST.manage();
+    // ENEMY.move();
+    //ENEMY.collideLaser();
+    //ENEMY.collideHero();
+    ENGINE.TIMERS.update();
+    GAME.frameDraw(lapsedTime);
+  },
+  frameDraw(lapsedTime) {
+    console.log("lapsedTime", lapsedTime);
+    //ENGINE.clearLayerStack();
+    //GAME.updateVieport();
+    //GAME.drawAnimation();
+    //ENEMY.draw();
+    //LASER.draw();
+    //EXPLOSIONS.draw();
+    //MINIMAP.refresh();
+    //TITLE.score();
+    //TITLE.updateTime();
+    if (DEBUG.FPS) GAME.FPS(lapsedTime);
   },
   respond() {
     //GAME.respond() template
@@ -1357,7 +1368,7 @@ const GAME = {
     $("#pause").prop("value", "Pause Game [F4]");
     $("#pause").off("click", GAME.resume);
     $("#pause").on("click", GAME.pause);
-    if (SHIP.live) ENGINE.clearLayer("text");
+    //if (SHIP.live) ENGINE.clearLayer("text");
     ENGINE.TIMERS.start();
     ENGINE.GAME.ANIMATION.resetTimer();
     ENGINE.GAME.ANIMATION.next(GAME.run);
@@ -1365,7 +1376,7 @@ const GAME = {
   },
   FPS(lapsedTime) {
     let CTX = LAYER.FPS;
-    CTX.fillStyle = "white";
+    CTX.fillStyle = "black";
     ENGINE.clearLayer("FPS");
     let fps = 1000 / lapsedTime || 0;
     GAME.fps.update(fps);
@@ -1417,6 +1428,8 @@ const TITLE = {
     TITLE.stage();
     TITLE.time();
     TITLE.hiScore();
+    TITLE.lives();
+    TITLE.score();
   },
   mainTitle() {
     const CTX = LAYER.title;
@@ -1520,7 +1533,7 @@ const TITLE = {
     CTX.shadowBlur = 2;
     x = 534;
     y = 68;
-    CTX.fillText(GAME.level.toString().padLeft(2, "0"), x, y);
+    CTX.fillText(GAME.level.toString().padStart(2, "0"), x, y);
   },
   key() {
     var CTX = LAYER.key;
@@ -1530,7 +1543,6 @@ const TITLE = {
     ENGINE.draw("key", x, y + (h - SPRITE.key.height) / 2, SPRITE.key);
   },
   time() {
-    var CTX = LAYER.title;
     var x = 584;
     var y = 32;
     ENGINE.draw("title", x, y, SPRITE.shield);
@@ -1557,11 +1569,7 @@ const TITLE = {
     } else {
       HS = SCORE.SCORE.name[0];
     }
-    var text =
-      "HISCORE: " +
-      SCORE.SCORE.value[0].toString().padLeft(8, "0") +
-      " by " +
-      HS;
+    const text = `HISCORE: ${SCORE.SCORE.value[0].toString().padStart(8, "0")} by ${HS}`;
     CTX.fillText(text, x, y);
   },
   score() {
@@ -1577,7 +1585,7 @@ const TITLE = {
     CTX.textAlign = "left";
     var x = 700;
     var y = 82;
-    CTX.fillText("SCORE: " + GAME.score.toString().padLeft(8, "0"), x, y);
+    CTX.fillText("SCORE: " + GAME.score.toString().padStart(8, "0"), x, y);
     if (GAME.score >= GAME.extraLife[0]) {
       GAME.lives++;
       GAME.extraLife.shift();
