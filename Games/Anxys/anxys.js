@@ -19,7 +19,7 @@ const DEBUG = {
 const INI = {
   titleHeight: 120,
   bottomHeight: 40,
-  HERO_SPEED: 8,
+  HERO_SPEED: 6,
   MINI_PIX: 5,
   LASER_SPEED_MIN: 16,
   LASER_SPEED_MAX: 32,
@@ -172,7 +172,7 @@ class Treasure {
 }
 
 const PRG = {
-  VERSION: "1.02.06",
+  VERSION: "1.02.07",
   NAME: "Anxys",
   YEAR: "2018",
   CSS: "color: #239AFF;",
@@ -243,9 +243,7 @@ const PRG = {
 };
 
 const HERO = {
-  /*   update() {
-      HERO.draw();
-    }, */
+
   useLamp() {
     if (!DEBUG.INF_LAMPS) HERO.lamp = false;
     TITLE.lamp();
@@ -253,22 +251,23 @@ const HERO = {
   },
   manage(lapsedTime) {
     HERO.move(lapsedTime);
-    HERO.moved = true;
+
   },
   move(lapsedTime) {
     if (HERO.dead) return;
     if (HERO.moveState.moving) {
       GRID.translateMove(HERO, lapsedTime, HERO.moveState.gridArray, true);
+      HERO.moved = true;
     }
   },
   changeDirection(dir) {
     if (HERO.moveState.moving) return;
     const nextGrid = HERO.moveState.endGrid.add(dir);
-    
+
     if (HERO.moveState.gridArray.isEmpty(nextGrid)) {
       HERO.moveState.next(dir);
     }
-   
+
   },
   draw() {
     if (!HERO.moved) return;
@@ -301,8 +300,6 @@ const HERO = {
     //HERO.hasKey = true; //DEBUG
 
     HERO.moved = true;
-    //HERO.homeGrid = GRID.coordToGrid(HERO.actor.x, HERO.actor.y);
-
     HERO.right = MAP[GAME.level].pw - HERO.left;
     HERO.down = MAP[GAME.level].ph - HERO.up;
     HERO.contMove = false; //

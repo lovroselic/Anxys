@@ -196,8 +196,10 @@ const GRID = {
     if (!gridArray) {
       gridArray = entity.moveState.gridArray;
     }
+
     entity.actor.x += entity.moveState.dir.x * entity.speed;
     entity.actor.y += entity.moveState.dir.y * entity.speed;
+
     entity.actor.orientation = entity.actor.getOrientation(entity.moveState.dir);
     if (animate) {
       entity.actor.updateAnimation(lapsedTime, entity.actor.orientation);
