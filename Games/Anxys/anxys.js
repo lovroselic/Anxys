@@ -172,7 +172,7 @@ class Treasure {
 }
 
 const PRG = {
-  VERSION: "1.02.04",
+  VERSION: "1.02.05",
   NAME: "Anxys",
   YEAR: "2018",
   CSS: "color: #239AFF;",
@@ -243,9 +243,9 @@ const PRG = {
 };
 
 const HERO = {
-  update() {
-    HERO.draw();
-  },
+  /*   update() {
+      HERO.draw();
+    }, */
   useLamp() {
     if (!DEBUG.INF_LAMPS) HERO.lamp = false;
     TITLE.lamp();
@@ -395,12 +395,11 @@ const HERO = {
     }
   },
   draw() {
-    console.log("HERO MOVED", HERO.moved);
-    console.log(!HERO.moved, HERO.dead);
     if (!HERO.moved) return;
     ENGINE.clearLayer("hero");
     if (HERO.dead) return;
-    console.info("HERO draw", HERO.actor.vx, HERO.actor.vy, HERO.actor.sprite());
+    //console.info("HERO draw", HERO, HERO.actor.vx, HERO.actor.vy, HERO.actor.sprite());
+    //console.info("vp", ENGINE.VIEWPORT);
     ENGINE.spriteDraw("hero", HERO.actor.vx, HERO.actor.vy, HERO.actor.sprite());
     HERO.moved = false;
   },
@@ -1039,13 +1038,8 @@ const GAME = {
     GAME.score = 0;
     GAME.lives = 4;                                       //DEFAULT
 
-    //TITLE.title();
-    //TITLE.background();
-
     HERO.startInit();
     GAME.levelStart(GAME.level);
-
-    ENGINE.GAME.ANIMATION.stop();                         //DEBUG
   },
   prepareForRestart() {
     //everything required for safe restart
@@ -1053,7 +1047,7 @@ const GAME = {
     ENGINE.clearManylayers(clear);
     MAP = $.extend(true, {}, BACKUP_MAP);
   },
-  levelContinue() {
+  /* levelContinue() {
     console.log("LEVEL", GAME.level, "continues ...");
     HERO.dead = false;
     ENEMY.pool.clear();
@@ -1067,16 +1061,13 @@ const GAME = {
     ENGINE.GAME.stopAnimation = false;
     GAME.timeStart = Date.now();
     ENGINE.GAME.run(GAME.run);
-  },
+  }, */
   async levelStart(level) {
     console.log("starting level", level);
     GAME.levelCompleted = false;
     ENGINE.VIEWPORT.reset();
     await GAME.initLevel(level);
-
     GAME.firstFrameDraw(level);
-    HERO.init();
-
     GAME.resume();
 
     /* HERO.init();
@@ -1126,12 +1117,15 @@ const GAME = {
     MAP[level].map.GA.importBinaryString(MAP[level].binary);
     MAP[level].pw = MAP[level].width * ENGINE.INI.GRIDPIX;
     MAP[level].ph = MAP[level].height * ENGINE.INI.GRIDPIX;
+    ENGINE.VIEWPORT.setMax({ x: MAP[level].pw, y: MAP[level].ph });
 
     //setting grahic templates
     ENGINE.resizeBOX("LEVEL", MAP[level].pw, MAP[level].ph);
     ENGINE.TEXTUREGRID.configure("floor", "wall", MAP[level].floor, MAP[level].background);
     await ENGINE.TEXTUREGRID.draw(MAP[level].map);
     await BITMAP.store(LAYER.floor.canvas, "maze");
+
+    HERO.init();//
 
     console.timeEnd("init");
     console.log("MAP", MAP[level]);
@@ -1184,7 +1178,6 @@ const GAME = {
     ENGINE.VIEWPORT.changed = true;
     GAME.updateVieport();
     TITLE.main();
-    //HERO.draw();
 
 
 
@@ -1233,9 +1226,11 @@ const GAME = {
     GAME.frameDraw(lapsedTime);
   },
   frameDraw(lapsedTime) {
-    console.log("lapsedTime", lapsedTime);
-    //ENGINE.clearLayerStack();
-    //GAME.updateVieport();
+    ENGINE.clearLayerStack();
+    GAME.updateVieport();
+    HERO.draw();
+    //
+    //
     //GAME.drawAnimation();
     //ENEMY.draw();
     //LASER.draw();
@@ -1350,8 +1345,8 @@ const GAME = {
   pause() {
     if (GAME.paused) return;
     if (GAME.levelFinished) return;
-    if (SHIP.dead) return;
-    if (!SHIP.live) return;
+    if (HERO.dead) return;
+    //if (!SHIP.live) return;
     console.log("%cGAME paused.", PRG.CSS);
     let GameRD = new RenderData("Arcade", 48, "#DDD", "text", "#000", 2, 2, 2);
     ENGINE.TEXT.setRD(GameRD);
@@ -1430,6 +1425,7 @@ const TITLE = {
     TITLE.hiScore();
     TITLE.lives();
     TITLE.score();
+    TITLE.lamp();
   },
   mainTitle() {
     const CTX = LAYER.title;

@@ -1145,7 +1145,6 @@ const ENGINE = {
     changeFromBitmap(from, to) {
       ENGINE.copyLayerFromBitmap(BITMAP[from], to, ENGINE.VIEWPORT.vx, ENGINE.VIEWPORT.vy, ENGINE.gameWIDTH, ENGINE.gameHEIGHT);
     },
-
     check(actor, max = ENGINE.VIEWPORT.max) {
       var vx = actor.x - ENGINE.gameWIDTH / 2;
       var vy = actor.y - ENGINE.gameHEIGHT / 2;
