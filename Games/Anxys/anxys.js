@@ -14,6 +14,7 @@ const DEBUG = {
   INF_LIVES: false,
   INF_LAMPS: false,
   FPS: true,
+  GRID: true,
 };
 
 const INI = {
@@ -75,36 +76,7 @@ class Nest {
   }
 }
 
-class Warp {
-  constructor(gridA, gridB) {
-    var empty = { x: -1, y: -1, angle: -1 };
-    this.gridA = gridA || empty;
-    this.gridB = gridB || empty;
-    this.isComplete();
-  }
-  static toClass(obj) {
-    return new Warp(obj.gridA, obj.gridB);
-  }
-  same(grid) {
-    if (grid.x === this.gridA.x && grid.y === this.gridA.y) {
-      return "gridA";
-    } else if (grid.x === this.gridB.x && grid.y === this.gridB.y) {
-      return "gridB";
-    } else return -1;
-  }
-  isComplete() {
-    if (this.gridA.angle != -1 && this.gridB.angle != -1) {
-      this.complete = true;
-    } else {
-      this.complete = false;
-    }
-    return this.complete;
-  }
-  update(gridB) {
-    this.gridB = gridB;
-    this.isComplete();
-  }
-}
+
 
 class Gate {
   constructor(homeGrid) {
@@ -172,7 +144,7 @@ class Treasure {
 }
 
 const PRG = {
-  VERSION: "1.02.07",
+  VERSION: "1.02.08",
   NAME: "Anxys",
   YEAR: "2018",
   CSS: "color: #239AFF;",
@@ -196,7 +168,7 @@ const PRG = {
   setup() {
     $("#engine_version").html(ENGINE.VERSION);
     $("#grid_version").html(GRID.VERSION);
-    //$("#iam_version").html(IndexArrayManagers.VERSION);
+    $("#iam_version").html(IndexArrayManagers.VERSION);
     $("#lib_version").html(LIB.VERSION);
 
     $("#toggleHelp").click(function () {
@@ -221,9 +193,9 @@ const PRG = {
     ENGINE.addBOX("TITLE", ENGINE.gameWIDTH, ENGINE.titleHEIGHT, ["title", "minimap", "dynamic_map", "key", "score", "time"]);
     ENGINE.addBOX("ROOM", ENGINE.gameWIDTH, ENGINE.gameHEIGHT, ["background", "static", "hell", "hero", "animation", "enemy", "laser", "explosion", "text", "dyntext", "FPS", "button"]);
     ENGINE.addBOX("DOWN", ENGINE.gameWIDTH, ENGINE.bottomHEIGHT, ["bottom", "lives", "lamp", "bottomText"]);
-    ENGINE.addBOX("LEVEL", ENGINE.gameWIDTH, ENGINE.gameHEIGHT, ["floor", "wall", "nest", "template_static", "template_dynamic"]);
+    ENGINE.addBOX("LEVEL", ENGINE.gameWIDTH, ENGINE.gameHEIGHT, ["floor", "wall", "nest", "template_static", "template_dynamic", "grid"]);
 
-    $("#LEVEL").addClass("hidden");
+    //$("#LEVEL").addClass("hidden");
   },
   start() {
     console.log(PRG.NAME + " started.");
@@ -266,6 +238,9 @@ const HERO = {
 
     if (HERO.moveState.gridArray.isEmpty(nextGrid)) {
       HERO.moveState.next(dir);
+    } else {
+      const value = HERO.moveState.gridArray.getValue(nextGrid);
+      console.log("value", value);
     }
 
   },
@@ -941,6 +916,7 @@ const GAME = {
     ENGINE.VIEWPORT.reset();
     await GAME.initLevel(level);
     GAME.firstFrameDraw(level);
+    GAME.timer = new CountDown("gameTime", DEFINE[GAME.level].time, GAME.timeIsUp);
     GAME.resume();
 
     /* HERO.init();
@@ -955,6 +931,10 @@ const GAME = {
     GAME.timeStart = Date.now();
     ENGINE.GAME.stopAnimation = false;
     ENGINE.GAME.run(GAME.run); */
+  },
+  timeIsUp() {
+    console.error("TIME ENDS");
+    HERO.canShoot = false;
   },
   nextLevel() {
     GAME.level++;
@@ -996,9 +976,20 @@ const GAME = {
     ENGINE.resizeBOX("LEVEL", MAP[level].pw, MAP[level].ph);
     ENGINE.TEXTUREGRID.configure("floor", "wall", MAP[level].floor, MAP[level].background);
     await ENGINE.TEXTUREGRID.draw(MAP[level].map);
-    await BITMAP.store(LAYER.floor.canvas, "maze");
+    //await BITMAP.store(LAYER.floor.canvas, "maze");
 
-    HERO.init();//
+    HERO.init();
+    BUMP2D.init(MAP[level].map);
+
+    SPAWN.spawn(MAP[level]);
+
+    //drawing of statics
+    BUMP2D.draw();
+
+    await ENGINE.flattenLayers("nest", "floor");
+
+
+    await BITMAP.store(LAYER.floor.canvas, "maze");
 
     console.timeEnd("init");
     console.log("MAP", MAP[level]);
@@ -1047,12 +1038,13 @@ const GAME = {
   },
   firstFrameDraw(level) {
     console.log("drawing first frame");
+    ENGINE.clearLayerStack();
     ENGINE.VIEWPORT.changed = true;
     GAME.updateVieport();
     TITLE.main();
 
 
-
+    if (DEBUG.GRID) GRID.grid();
     /*     GRID.repaint(
           MAP[level].grid,
           SPRITE[MAP[level].floor],
@@ -1104,6 +1096,7 @@ const GAME = {
     ENGINE.clearLayerStack();
     GAME.updateVieport();
     HERO.draw();
+    TITLE.updateTime();
     //
     //
     //GAME.drawAnimation();
@@ -1491,12 +1484,6 @@ const TITLE = {
     if (HERO.dead) return;
     var CTX = LAYER.time;
     ENGINE.clearLayer("time");
-    GAME.timeLeft =
-      GAME.timeRemains - Math.round((Date.now() - GAME.timeStart) / 1000);
-    if (GAME.timeLeft < 0 && !HERO.dead) {
-      GAME.timeLeft = 0;
-      HERO.canShoot = false;
-    }
     CTX.font = "18px Consolas";
     CTX.fillStyle = "#000";
     CTX.textAlign = "center";
@@ -1506,7 +1493,8 @@ const TITLE = {
     CTX.shadowBlur = 2;
     var x = 632;
     var y = 72;
-    CTX.fillText(GAME.timeLeft.toString().padLeft(3, "0"), x, y);
+    const remains = Math.round(GAME.timer.remains()).toString().padStart(3, "0");
+    CTX.fillText(remains, x, y);
   },
   run() {
     if (ENGINE.GAME.stopAnimation) return;

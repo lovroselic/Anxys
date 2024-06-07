@@ -25,12 +25,17 @@ LoadPacks = [
   { srcName: "Ghosty.png", count: 4, name: "Ghosty" },
 ];
 
-var LoadSprites = [
+LoadSprites = [
   //UI
   { srcName: "UI/aladdin-lamp.png", name: "lamp" },
   { srcName: "UI/ghostLives.png", name: "ghostLives" },
   { srcName: "UI/stage.png", name: "stage" },
   { srcName: "UI/shieldTime.png", name: "shield" },
+];
+
+LoadRotated = [
+  { srcName: "Warp.png", name: "Warp", rotate: { first: 0, last: 270, step: 90 } },
+  { srcName: "Nest.png", name: "Nest", rotate: { first: 0, last: 270, step: 90 } },
 ];
 
 console.log("Assets for Anxys completed");

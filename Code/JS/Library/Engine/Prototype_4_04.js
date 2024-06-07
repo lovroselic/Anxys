@@ -6,7 +6,7 @@
 console.clear();
 
 const LIB = {
-  VERSION: "4.03",
+  VERSION: "4.04",
   CSS: "color: #EFE",
   log: function () {
     console.log(`%cPrototype LIB ${LIB.VERSION} loaded`, LIB.CSS);
@@ -26,6 +26,7 @@ changelog:
       Vector.mul bug corrected
       AUDIO.isPlaying
 4.03: .limit on master grid
+4.04: Angle.getOrtoVector
 
 */
 
@@ -530,7 +531,7 @@ class MasterGridClass {
   same(grid) {
     return (grid.x === this.x) && (grid.y === this.y);
   }
-  limit(maxX, maxY){
+  limit(maxX, maxY) {
     this.x = Math.min(maxX, Math.max(0, this.x));
     this.y = Math.min(maxY, Math.max(0, this.y));
     return new this.constructor(this.x, this.y);
@@ -1037,10 +1038,19 @@ class Angle {
     const normalizedDirY = dirY / magnitude;
     return new FP_Vector(normalizedDirX, normalizedDirY);
   }
+  getOrtoVector(refVector) {
+    switch (this.angle) {
+      case 0: return UP;
+      case 90: return RIGHT;
+      case 180: return DOWN;
+      case 270: return LEFT;
+      default: return NOWAY;
+    }
+  }
 }
 
 //audio
-HTMLAudioElement.prototype.isPlaying = function() {
+HTMLAudioElement.prototype.isPlaying = function () {
   return !this.paused && this.currentTime > 0;
 };
 Audio.prototype.stop = function () {
