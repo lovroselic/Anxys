@@ -603,6 +603,9 @@ const MAPDICT = {
   GATE: 2 ** 5,                           //32 - STAIR alias -> route to another dungeon
   HOLE: 2 ** 7,                           //128
 
+  //aliases
+  WARP: 2 ** 5,                           //32 - STAIR alias -> route to another part of the dungeon
+
   //16 bit extension
 
 

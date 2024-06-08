@@ -70,17 +70,15 @@ class Warp {
     this.spriteRotation = spriteRotation;
     this.dir = dir;
     this.pos = GRID.gridToCoord(destination.origin);
+    this.grid = this.destination.origin;
 
     if (spriteRotation !== 270) this.pos.x -= 12;
     if (spriteRotation !== 0) this.pos.y -= 12;
   }
   getSprite() {
-    console.log(`Warp_${this.spriteRotation}`);
     return SPRITE[`Warp_${this.spriteRotation}`];
   }
   draw() {
-    console.log("draw warp");
-    //ENGINE.layersToClear.add("nest");
     ENGINE.draw('nest', this.pos.x, this.pos.y, this.getSprite());
   }
 }
@@ -93,8 +91,6 @@ const SPAWN = {
   },
   warp(map, GA) {
     console.warn("... warps");
-    //map.map.warps = [];
-    //const warps = map.map.warps;
     for (let warp of map.warp) {
       console.log("warp", warp);
       const gridA = Grid.toClass(warp.gridA);
@@ -107,7 +103,8 @@ const SPAWN = {
       const warpB = new Warp(dB, warp.gridB.angle, dirB);
       BUMP2D.add(warpA);
       BUMP2D.add(warpB);
-      //warps.push(warpA, warpB);
+      GA.set(gridA, MAPDICT.WARP);
+      GA.set(gridB, MAPDICT.WARP);
     }
 
     console.info("BUMP2D", BUMP2D);

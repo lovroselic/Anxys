@@ -144,7 +144,7 @@ class Treasure {
 }
 
 const PRG = {
-  VERSION: "1.02.08",
+  VERSION: "1.02.09",
   NAME: "Anxys",
   YEAR: "2018",
   CSS: "color: #239AFF;",
@@ -239,8 +239,17 @@ const HERO = {
     if (HERO.moveState.gridArray.isEmpty(nextGrid)) {
       HERO.moveState.next(dir);
     } else {
-      const value = HERO.moveState.gridArray.getValue(nextGrid);
-      console.log("value", value);
+      //warp: next 0, this 32
+      const valueNext = HERO.moveState.gridArray.getValue(nextGrid);
+      const valueThis = HERO.moveState.gridArray.getValue(HERO.moveState.startGrid);
+      console.log("value nextGrid", valueNext, "this grid", valueThis);
+      const IA = MAP[GAME.level].map[BUMP2D.IA];
+      const id = IA.unroll(HERO.moveState.startGrid);
+
+      const warp = BUMP2D.show(id);
+      const orientation = GRID.same(dir, warp.dir.mirror());
+
+      console.warn("warp", id, warp, orientation);
     }
 
   },
@@ -982,6 +991,7 @@ const GAME = {
     BUMP2D.init(MAP[level].map);
 
     SPAWN.spawn(MAP[level]);
+    BUMP2D.manage();
 
     //drawing of statics
     BUMP2D.draw();
