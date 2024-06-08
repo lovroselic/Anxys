@@ -15,6 +15,7 @@ const DEBUG = {
   INF_LAMPS: false,
   FPS: true,
   GRID: true,
+  COORD: true,
 };
 
 const INI = {
@@ -144,7 +145,7 @@ class Treasure {
 }
 
 const PRG = {
-  VERSION: "1.02.09",
+  VERSION: "1.02.10",
   NAME: "Anxys",
   YEAR: "2018",
   CSS: "color: #239AFF;",
@@ -193,7 +194,7 @@ const PRG = {
     ENGINE.addBOX("TITLE", ENGINE.gameWIDTH, ENGINE.titleHEIGHT, ["title", "minimap", "dynamic_map", "key", "score", "time"]);
     ENGINE.addBOX("ROOM", ENGINE.gameWIDTH, ENGINE.gameHEIGHT, ["background", "static", "hell", "hero", "animation", "enemy", "laser", "explosion", "text", "dyntext", "FPS", "button"]);
     ENGINE.addBOX("DOWN", ENGINE.gameWIDTH, ENGINE.bottomHEIGHT, ["bottom", "lives", "lamp", "bottomText"]);
-    ENGINE.addBOX("LEVEL", ENGINE.gameWIDTH, ENGINE.gameHEIGHT, ["floor", "wall", "nest", "template_static", "template_dynamic", "grid"]);
+    ENGINE.addBOX("LEVEL", ENGINE.gameWIDTH, ENGINE.gameHEIGHT, ["floor", "wall", "nest", "template_static", "template_dynamic", "grid", "coord"]);
 
     //$("#LEVEL").addClass("hidden");
   },
@@ -215,7 +216,14 @@ const PRG = {
 };
 
 const HERO = {
+  goto(grid) {
+    this.moveState.reset(grid);
+    HERO.moved = true;
+    GRID.gridToSprite(this.moveState.startGrid, HERO.actor);
+    ENGINE.VIEWPORT.check(HERO.actor);
+    ENGINE.VIEWPORT.alignTo(HERO.actor);
 
+  },
   useLamp() {
     if (!DEBUG.INF_LAMPS) HERO.lamp = false;
     TITLE.lamp();
@@ -239,17 +247,20 @@ const HERO = {
     if (HERO.moveState.gridArray.isEmpty(nextGrid)) {
       HERO.moveState.next(dir);
     } else {
-      //warp: next 0, this 32
+
       const valueNext = HERO.moveState.gridArray.getValue(nextGrid);
       const valueThis = HERO.moveState.gridArray.getValue(HERO.moveState.startGrid);
       console.log("value nextGrid", valueNext, "this grid", valueThis);
-      const IA = MAP[GAME.level].map[BUMP2D.IA];
-      const id = IA.unroll(HERO.moveState.startGrid);
 
-      const warp = BUMP2D.show(id);
-      const orientation = GRID.same(dir, warp.dir.mirror());
-
-      console.warn("warp", id, warp, orientation);
+      if (valueNext === MAPDICT.WALL && valueThis === MAPDICT.WARP) {
+        //warp: next 1, this 32
+        const IA = MAP[GAME.level].map[BUMP2D.IA];
+        const id = IA.unroll(HERO.moveState.startGrid);
+        const warp = BUMP2D.show(id);
+        const orientation = GRID.same(dir, warp.dir.mirror());
+        if (orientation) HERO.goto(warp.destination.waypoint);
+        console.warn("warp", id, warp, orientation);
+      }
     }
 
   },
@@ -1055,6 +1066,7 @@ const GAME = {
 
 
     if (DEBUG.GRID) GRID.grid();
+    if (DEBUG.COORD) GRID.paintCoord("coord", MAP[GAME.level].map);
     /*     GRID.repaint(
           MAP[level].grid,
           SPRITE[MAP[level].floor],
