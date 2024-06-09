@@ -62,13 +62,15 @@ class Gate {
     return SPRITE.door;
   }
   draw() {
-    ENGINE.draw('nest', this.pos.x, this.pos.y, this.getSprite());
+    ENGINE.draw('template_static', this.pos.x, this.pos.y, this.getSprite());
   }
   open() {
     console.warn("open the door", this.id);
     this.GA.toEmpty(this.grid);
     BUMP2D.remove(this.id);
     BUMP2D.requestReIndex();
+    BUMP2D.manage();
+    GAME.updateStatic();
   }
   value() {
     return 1000;

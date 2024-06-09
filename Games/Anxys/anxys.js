@@ -126,7 +126,7 @@ class Treasure {
 }
 
 const PRG = {
-  VERSION: "1.02.10",
+  VERSION: "1.02.11",
   NAME: "Anxys",
   YEAR: "2018",
   CSS: "color: #239AFF;",
@@ -1030,22 +1030,26 @@ const GAME = {
   updateVieport() {
     if (!ENGINE.VIEWPORT.changed) return;
     ENGINE.VIEWPORT.changeFromBitmap("maze", "background");
-    //ENGINE.VIEWPORT.change("wall", "background");
-    //ENGINE.clearLayer("static");
-    //ENGINE.VIEWPORT.change("template_static", "static");
+    ENGINE.clearLayer("static");
+    ENGINE.VIEWPORT.change("template_static", "static");
     ENGINE.VIEWPORT.changed = false;
   },
   updateStatic(level) {
+    console.info("updated static");
     level = level || GAME.level;
     ENGINE.clearLayer("template_static");
-    GRID.paintDoor(MAP[level].door, "template_static", false);
-    GRID.paintKey(MAP[level].key, "template_static", false);
-    GRID.paintTreasure(
-      MAP[level].treasure,
-      "template_static",
-      false,
-      TreasureList
-    );
+    BUMP2D.draw();
+
+    ENGINE.VIEWPORT.changed = true;
+    /*  ENGINE.clearLayer("template_static");
+     GRID.paintDoor(MAP[level].door, "template_static", false);
+     GRID.paintKey(MAP[level].key, "template_static", false);
+     GRID.paintTreasure(
+       MAP[level].treasure,
+       "template_static",
+       false,
+       TreasureList
+     ); */
   },
   drawAnimation() {
     TEXTPOOL.draw("animation");
@@ -1054,6 +1058,7 @@ const GAME = {
   firstFrameDraw(level) {
     console.log("drawing first frame");
     ENGINE.clearLayerStack();
+    GAME.updateStatic(level);
     ENGINE.VIEWPORT.changed = true;
     GAME.updateVieport();
     TITLE.main();
@@ -1097,7 +1102,7 @@ const GAME = {
     if (ENGINE.GAME.stopAnimation) return;
 
     HERO.manage(lapsedTime);
-    BUMP2D.manage(lapsedTime);            // on requested reindex!
+    //BUMP2D.manage(lapsedTime);            // this is done when even requires it
     //NEST.manage();
     // ENEMY.move();
     //ENEMY.collideLaser();
