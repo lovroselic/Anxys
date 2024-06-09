@@ -303,7 +303,6 @@ class Floor_Object extends IAM {
         this.byte = byte;
         this.banks = banks;
     }
-
     requestReIndex() {
         this.reIndexRequired = true;
     }
@@ -333,6 +332,14 @@ class Bump2D extends Floor_Object {
     constructor(byte = 1, banks = 1) {
         super();
         this.IA = `bump_2D`;
+    }
+    manage() {
+        if (!this.reIndexRequired) return;
+        let map = this.map;
+        map[this.IA] = new IndexArray(map.width, map.height, this.byte, this.banks);
+        this.reIndex();
+        this.poolToIA(map[this.IA]);
+        this.size = this.POOL.length;
     }
 }
 

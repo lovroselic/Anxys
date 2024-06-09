@@ -77,25 +77,6 @@ class Nest {
   }
 }
 
-
-
-class Gate {
-  constructor(homeGrid) {
-    this.homeGrid = homeGrid;
-  }
-  static toClass(obj) {
-    return new Gate(obj.homeGrid);
-  }
-  same(grid) {
-    if (grid.x === this.homeGrid.x && grid.y === this.homeGrid.y) {
-      return true;
-    } else return false;
-  }
-  value() {
-    return 1000;
-  }
-}
-
 class Key {
   constructor(homeGrid) {
     this.homeGrid = homeGrid;
@@ -222,7 +203,6 @@ const HERO = {
     GRID.gridToSprite(this.moveState.startGrid, HERO.actor);
     ENGINE.VIEWPORT.check(HERO.actor);
     ENGINE.VIEWPORT.alignTo(HERO.actor);
-
   },
   useLamp() {
     if (!DEBUG.INF_LAMPS) HERO.lamp = false;
@@ -250,16 +230,26 @@ const HERO = {
 
       const valueNext = HERO.moveState.gridArray.getValue(nextGrid);
       const valueThis = HERO.moveState.gridArray.getValue(HERO.moveState.startGrid);
+      const IA = MAP[GAME.level].map[BUMP2D.IA];
       console.log("value nextGrid", valueNext, "this grid", valueThis);
 
       if (valueNext === MAPDICT.WALL && valueThis === MAPDICT.WARP) {
         //warp: next 1, this 32
-        const IA = MAP[GAME.level].map[BUMP2D.IA];
         const id = IA.unroll(HERO.moveState.startGrid);
         const warp = BUMP2D.show(id);
         const orientation = GRID.same(dir, warp.dir.mirror());
         if (orientation) HERO.goto(warp.destination.waypoint);
-        console.warn("warp", id, warp, orientation);
+        //console.warn("warp", id, warp, orientation);
+        return;
+      }
+      if (valueNext === MAPDICT.WALL + MAPDICT.DOOR) {
+        //door: next 5, this 0
+        if (HERO.hasKey) {
+          const id = IA.unroll(nextGrid);
+          const door = BUMP2D.show(id);
+          door.open();
+          GAME.addScore(door.value());
+        }
       }
     }
 
@@ -292,7 +282,7 @@ const HERO = {
     ENGINE.VIEWPORT.check(HERO.actor);
     ENGINE.VIEWPORT.alignTo(HERO.actor);
     HERO.hasKey = false;
-    //HERO.hasKey = true; //DEBUG
+    HERO.hasKey = true; //DEBUG
 
     HERO.moved = true;
     HERO.right = MAP[GAME.level].pw - HERO.left;
@@ -937,6 +927,9 @@ const GAME = {
     await GAME.initLevel(level);
     GAME.firstFrameDraw(level);
     GAME.timer = new CountDown("gameTime", DEFINE[GAME.level].time, GAME.timeIsUp);
+    //debug
+    HERO.goto(new Grid(22, 9));
+    //
     GAME.resume();
 
     /* HERO.init();
@@ -996,12 +989,13 @@ const GAME = {
     ENGINE.resizeBOX("LEVEL", MAP[level].pw, MAP[level].ph);
     ENGINE.TEXTUREGRID.configure("floor", "wall", MAP[level].floor, MAP[level].background);
     await ENGINE.TEXTUREGRID.draw(MAP[level].map);
-    //await BITMAP.store(LAYER.floor.canvas, "maze");
 
     HERO.init();
+    TITLE.key();
     BUMP2D.init(MAP[level].map);
 
     SPAWN.spawn(MAP[level]);
+    BUMP2D.requestReIndex();
     BUMP2D.manage();
 
     //drawing of statics
@@ -1103,9 +1097,7 @@ const GAME = {
     if (ENGINE.GAME.stopAnimation) return;
 
     HERO.manage(lapsedTime);
-    //do all game loop stuff here
-    //GAME.respond();
-    //HERO.update();
+    BUMP2D.manage(lapsedTime);            // on requested reindex!
     //NEST.manage();
     // ENEMY.move();
     //ENEMY.collideLaser();
@@ -1273,6 +1265,10 @@ const GAME = {
     GAME.fps.update(fps);
     CTX.fillText(GAME.fps.getFps(), 5, 10);
   },
+  addScore(score) {
+    GAME.score += score;
+    TITLE.score();
+  }
 };
 
 const TITLE = {
@@ -1428,10 +1424,10 @@ const TITLE = {
     CTX.fillText(GAME.level.toString().padStart(2, "0"), x, y);
   },
   key() {
-    var CTX = LAYER.key;
-    var x = 432;
-    var y = 32;
-    var h = 60;
+    if (!HERO.hasKey) return;
+    const x = 432;
+    const y = 32;
+    const h = 60;
     ENGINE.draw("key", x, y + (h - SPRITE.key.height) / 2, SPRITE.key);
   },
   time() {

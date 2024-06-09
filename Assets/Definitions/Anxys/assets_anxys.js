@@ -31,6 +31,10 @@ LoadSprites = [
   { srcName: "UI/ghostLives.png", name: "ghostLives" },
   { srcName: "UI/stage.png", name: "stage" },
   { srcName: "UI/shieldTime.png", name: "shield" },
+  //door
+  { srcName: "Door/door.png", name: "door" },
+  //key
+  { srcName: "Keys/GoldKey.png", name: "key" },
 ];
 
 LoadRotated = [

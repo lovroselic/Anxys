@@ -26,37 +26,6 @@ const DEFINE = {
   10: { time: 120, enemy: ["Devil", "Death1", "Death2"] },
 };
 
-/* class Warp {
-  constructor(gridA, gridB) {
-    var empty = { x: -1, y: -1, angle: -1 };
-    this.gridA = gridA || empty;
-    this.gridB = gridB || empty;
-    this.isComplete();
-  }
-  static toClass(obj) {
-    return new Warp(obj.gridA, obj.gridB);
-  }
-  same(grid) {
-    if (grid.x === this.gridA.x && grid.y === this.gridA.y) {
-      return "gridA";
-    } else if (grid.x === this.gridB.x && grid.y === this.gridB.y) {
-      return "gridB";
-    } else return -1;
-  }
-  isComplete() {
-    if (this.gridA.angle != -1 && this.gridB.angle != -1) {
-      this.complete = true;
-    } else {
-      this.complete = false;
-    }
-    return this.complete;
-  }
-  update(gridB) {
-    this.gridB = gridB;
-    this.isComplete();
-  }
-} */
-
 class Destination {
   constructor(waypoint, origin) {
     this.waypoint = waypoint;
@@ -83,16 +52,38 @@ class Warp {
   }
 }
 
+class Gate {
+  constructor(grid, GA) {
+    this.grid = grid;
+    this.pos = GRID.gridToCoord(grid);
+    this.GA = GA;
+  }
+  getSprite() {
+    return SPRITE.door;
+  }
+  draw() {
+    ENGINE.draw('nest', this.pos.x, this.pos.y, this.getSprite());
+  }
+  open() {
+    console.warn("open the door", this.id);
+    this.GA.toEmpty(this.grid);
+    BUMP2D.remove(this.id);
+    BUMP2D.requestReIndex();
+  }
+  value() {
+    return 1000;
+  }
+}
+
 const SPAWN = {
   spawn(map) {
     const GA = map.map.GA;
     console.log("spawning", map, GA);
     this.warp(map, GA)
+    this.door(map, GA);
   },
   warp(map, GA) {
-    console.warn("... warps");
     for (let warp of map.warp) {
-      console.log("warp", warp);
       const gridA = Grid.toClass(warp.gridA);
       const gridB = Grid.toClass(warp.gridB);
       const dA = new Destination(gridB, gridA);
@@ -106,9 +97,18 @@ const SPAWN = {
       GA.set(gridA, MAPDICT.WARP);
       GA.set(gridB, MAPDICT.WARP);
     }
-
-    console.info("BUMP2D", BUMP2D);
   },
+  door(map, GA) {
+    for (let door of map.door) {
+      const grid = Grid.toClass(door.homeGrid);
+      const gate = new Gate(grid, GA);
+      console.log("gate", gate);
+      BUMP2D.add(gate);
+      GA.toWall(grid);
+      GA.addDoor(grid);
+    }
+    console.info("BUMP2D", BUMP2D);
+  }
 };
 
 var TreasureList = ["coin", "goldbar", "crown", "ring"];
