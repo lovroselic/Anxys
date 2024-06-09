@@ -10,6 +10,7 @@ LoadTextures = [
 
 LoadAudio = [
   { srcName: "Single Photon's Shadow.mp3", name: "Title" },
+  { srcName: "OpenGate.mp3", name: "OpenGate" },
 ];
 
 LoadFonts = [

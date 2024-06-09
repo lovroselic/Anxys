@@ -77,6 +77,19 @@ class Gate {
   }
 }
 
+class LiftingDoor {
+  constructor(grid) {
+    this.grid = grid;
+    this.line = 0;
+    this.maxLine = SPRITE.door.height;
+  }
+  draw() { }
+  change(lapsedTime) { }
+  complete() {
+    return this.line >= this.maxLine;
+  }
+}
+
 const SPAWN = {
   spawn(map) {
     const GA = map.map.GA;

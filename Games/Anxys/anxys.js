@@ -249,6 +249,9 @@ const HERO = {
           const door = BUMP2D.show(id);
           door.open();
           GAME.addScore(door.value());
+          HERO.hasKey = false;
+          ENGINE.clearLayer("key");
+          AUDIO.OpenGate.play();
         }
       }
     }
@@ -1273,6 +1276,7 @@ const GAME = {
   addScore(score) {
     GAME.score += score;
     TITLE.score();
+    //score IAM (text IAM)
   }
 };
 
