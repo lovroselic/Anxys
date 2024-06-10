@@ -126,7 +126,7 @@ class Treasure {
 }
 
 const PRG = {
-  VERSION: "1.02.14",
+  VERSION: "1.02.15",
   NAME: "Anxys",
   YEAR: "2018",
   CSS: "color: #239AFF;",
@@ -1193,6 +1193,7 @@ const GAME = {
   },
   setup() {
     console.log("GAME SETUP started");
+    AUDIO.OpenGate.rate = 2.0;
   },
   end() {
     console.log("GAME ENDED");

@@ -72,6 +72,7 @@ class Gate {
     BUMP2D.manage();
     GAME.updateStatic();
     CHANGING_ANIMATION.add(new LiftingDoor(this.grid));
+    VANISHING.add(new VanishingScore(this.grid, this.value()));
   }
   value() {
     return 1000;
@@ -81,13 +82,22 @@ class Gate {
 class VanishingScore {
   constructor(grid, text) {
     this.grid = grid;
-    this.pos = GRID.gridToCoord(grid);
+    this.pos = GRID.gridToCenterPX(grid);
+    this.text = text;
+    this.RD = new RenderData("Consolas", 10, "#FFF", "dyntext");
+    this.time = 1000;
   }
   update(lapsedTime) {
-    console.log("pdating score", this);
+    this.time -= lapsedTime;
+    if (this.time <= 0) {
+      VANISHING.remove(this.id);
+    }
   }
   draw() {
-    ENGINE.layersToClear.add("animation");
+    console.log("drawing score", this.text);
+    ENGINE.layersToClear.add("dyntext");
+    ENGINE.TEXT.setRD(this.RD);
+    ENGINE.TEXT.text(this.text, this.pos.x - ENGINE.VIEWPORT.vx, this.pos.y - ENGINE.VIEWPORT.vy);
   }
 }
 

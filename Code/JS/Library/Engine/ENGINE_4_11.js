@@ -3677,16 +3677,7 @@ const CONSOLE = {
   }
 };
 class RenderData {
-  constructor(
-    font,
-    fontSize,
-    color,
-    layer,
-    shadowColor,
-    shadowOffsetX,
-    shadowOffsetY,
-    shadowBlur
-  ) {
+  constructor(font, fontSize, color, layer, shadowColor, shadowOffsetX, shadowOffsetY, shadowBlur) {
     this.layerName = layer;
     this.layer = LAYER[layer];
     this.layer.font = `${fontSize}px ${font}`;
