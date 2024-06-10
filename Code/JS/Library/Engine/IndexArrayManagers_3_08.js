@@ -51,6 +51,7 @@ class IAM {
     }
     poolToIA(IA) {
         for (const obj of this.POOL) {
+            if (!obj) continue;
             let grid = null;
             if (obj.moveState) {
                 grid = Grid.toClass(obj.moveState.pos);
@@ -303,9 +304,6 @@ class Floor_Object extends IAM {
         this.byte = byte;
         this.banks = banks;
     }
-    requestReIndex() {
-        this.reIndexRequired = true;
-    }
     reIndex() {
         if (!this.reIndexRequired) return;
         this.POOL = this.POOL.filter((el) => el !== null);
@@ -373,6 +371,7 @@ class Changing_Animation extends IAM {
         this.IA = "changeanimIA";
     }
     manage(lapsedTime, map) {
+        map = map || this.map;
         map[this.IA] = new IndexArray(map.width, map.height, 4, 4);
         this.reIndex();
         this.poolToIA(map[this.IA]);
@@ -380,6 +379,7 @@ class Changing_Animation extends IAM {
             anim.change(lapsedTime);
             if (anim.complete()) {
                 CHANGING_ANIMATION.remove(anim.id);
+                this.setReindex();
             }
         }
     }

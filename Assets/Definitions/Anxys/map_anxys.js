@@ -68,23 +68,44 @@ class Gate {
     console.warn("open the door", this.id);
     this.GA.toEmpty(this.grid);
     BUMP2D.remove(this.id);
-    BUMP2D.requestReIndex();
+    BUMP2D.setReindex();
     BUMP2D.manage();
     GAME.updateStatic();
+    CHANGING_ANIMATION.add(new LiftingDoor(this.grid));
   }
   value() {
     return 1000;
   }
 }
 
+class VanishingScore {
+  constructor(grid, text) {
+    this.grid = grid;
+    this.pos = GRID.gridToCoord(grid);
+  }
+  update(lapsedTime) {
+    console.log("pdating score", this);
+  }
+  draw() {
+    ENGINE.layersToClear.add("animation");
+  }
+}
+
 class LiftingDoor {
   constructor(grid) {
     this.grid = grid;
-    this.line = 0;
+    this.pos = GRID.gridToCoord(grid);
     this.maxLine = SPRITE.door.height;
+    this.line = 0;
+    this.sprite = SPRITE.door;
   }
-  draw() { }
-  change(lapsedTime) { }
+  draw() {
+    ENGINE.layersToClear.add("animation");
+    ENGINE.drawPart("animation", this.pos.x - ENGINE.VIEWPORT.vx, this.pos.y - ENGINE.VIEWPORT.vy, this.sprite, 0, 0, 0, this.line);
+  }
+  change(lapsedTime) {
+    this.line++;
+  }
   complete() {
     return this.line >= this.maxLine;
   }

@@ -126,7 +126,7 @@ class Treasure {
 }
 
 const PRG = {
-  VERSION: "1.02.11",
+  VERSION: "1.02.14",
   NAME: "Anxys",
   YEAR: "2018",
   CSS: "color: #239AFF;",
@@ -996,9 +996,10 @@ const GAME = {
     HERO.init();
     TITLE.key();
     BUMP2D.init(MAP[level].map);
-
+    VANISHING.init(MAP[level].map);
+    CHANGING_ANIMATION.init(MAP[level].map);
     SPAWN.spawn(MAP[level]);
-    BUMP2D.requestReIndex();
+    BUMP2D.setReindex();
     BUMP2D.manage();
 
     //drawing of statics
@@ -1110,6 +1111,8 @@ const GAME = {
     // ENEMY.move();
     //ENEMY.collideLaser();
     //ENEMY.collideHero();
+    VANISHING.manage(lapsedTime);
+    CHANGING_ANIMATION.manage(lapsedTime);
     GAME.respond();
     ENGINE.TIMERS.update();
     GAME.frameDraw(lapsedTime);
@@ -1118,6 +1121,8 @@ const GAME = {
     ENGINE.clearLayerStack();
     GAME.updateVieport();
     HERO.draw();
+    VANISHING.draw();
+    CHANGING_ANIMATION.draw();
     TITLE.updateTime();
     //
     //
