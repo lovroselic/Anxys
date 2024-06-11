@@ -40,57 +40,8 @@ const INI = {
   LAST_LEVEL: 10
 };
 
-
-class Key {
-  constructor(homeGrid) {
-    this.homeGrid = homeGrid;
-  }
-  static toClass(obj) {
-    return new Key(obj.homeGrid);
-  }
-  same(grid) {
-    if (grid.x === this.homeGrid.x && grid.y === this.homeGrid.y) {
-      return true;
-    } else return false;
-  }
-  value() {
-    return 500;
-  }
-}
-
-class Treasure {
-  constructor(homeGrid) {
-    this.homeGrid = homeGrid;
-    Treasure.inc();
-    this.id = Treasure.count - 1;
-  }
-  static toClass(obj) {
-    return new Treasure(obj.homeGrid);
-  }
-  static inc() {
-    this.count = this.getCount() + 1;
-  }
-  static dec() {
-    this.count = this.getCount() - 1;
-  }
-  static getCount() {
-    return this.count || 0;
-  }
-  static reset() {
-    this.count = 0;
-  }
-  same(grid) {
-    if (grid.x === this.homeGrid.x && grid.y === this.homeGrid.y) {
-      return true;
-    } else return false;
-  }
-  value() {
-    return 500 * Math.pow(2, this.id);
-  }
-}
-
 const PRG = {
-  VERSION: "1.03.00",
+  VERSION: "1.03.01",
   NAME: "Anxys",
   YEAR: "2018",
   CSS: "color: #239AFF;",
@@ -880,6 +831,7 @@ const GAME = {
     VANISHING.init(MAP[level].map);
     CHANGING_ANIMATION.init(MAP[level].map);
     NEST.init(MAP[level].map);
+    FLOOR_OBJECT.init(MAP[level].map);
     SPAWN.spawn(MAP[level]);
     BUMP2D.setReindex();
     BUMP2D.manage();
@@ -924,6 +876,7 @@ const GAME = {
     level = level || GAME.level;
     ENGINE.clearLayer("template_static");
     BUMP2D.draw();
+    FLOOR_OBJECT.draw();
 
     ENGINE.VIEWPORT.changed = true;
     /*  ENGINE.clearLayer("template_static");
@@ -936,10 +889,10 @@ const GAME = {
        TreasureList
      ); */
   },
-  drawAnimation() {
-    TEXTPOOL.draw("animation");
-    SpritePOOL.draw("animation");
-  },
+  /*   drawAnimation() {
+      TEXTPOOL.draw("animation");
+      SpritePOOL.draw("animation");
+    }, */
   firstFrameDraw(level) {
     console.log("drawing first frame");
     ENGINE.clearLayerStack();
@@ -947,7 +900,6 @@ const GAME = {
     ENGINE.VIEWPORT.changed = true;
     GAME.updateVieport();
     TITLE.main();
-
 
     if (DEBUG.GRID) GRID.grid();
     if (DEBUG.COORD) GRID.paintCoord("coord", MAP[GAME.level].map);

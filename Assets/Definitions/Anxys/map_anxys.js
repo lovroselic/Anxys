@@ -137,6 +137,72 @@ class Nest {
   }
 }
 
+class FloorItem {
+  constructor(grid) {
+    this.grid = grid;
+    this.pos = GRID.gridToCenterPX(grid);
+  }
+  draw() {
+    ENGINE.spriteDraw('template_static', this.pos.x, this.pos.y, this.getSprite());
+  }
+  touch() {
+    this.pick();
+    ENGINE.VIEWPORT.changed = false;
+  }
+}
+
+class Key extends FloorItem {
+  constructor(grid) {
+    super(grid);
+    this.value = 500;
+  }
+  getSprite() {
+    return SPRITE.key;
+  }
+  pick() { }
+}
+
+class Treasure extends FloorItem {
+  constructor(grid, sprite) {
+    super(grid);
+    this.sprite = sprite;
+  }
+  getSprite() {
+    return SPRITE[this.sprite];
+  }
+  pick() { }
+}
+
+/* class Treasure {
+  constructor(homeGrid) {
+    this.homeGrid = homeGrid;
+    Treasure.inc();
+    this.id = Treasure.count - 1;
+  }
+  static toClass(obj) {
+    return new Treasure(obj.homeGrid);
+  }
+  static inc() {
+    this.count = this.getCount() + 1;
+  }
+  static dec() {
+    this.count = this.getCount() - 1;
+  }
+  static getCount() {
+    return this.count || 0;
+  }
+  static reset() {
+    this.count = 0;
+  }
+  same(grid) {
+    if (grid.x === this.homeGrid.x && grid.y === this.homeGrid.y) {
+      return true;
+    } else return false;
+  }
+  value() {
+    return 500 * Math.pow(2, this.id);
+  }
+} */
 
 const SPAWN = {
   spawn(map) {
@@ -144,17 +210,29 @@ const SPAWN = {
     console.log("spawning", map, GA);
     this.warp(map, GA)
     this.door(map, GA);
-    this.nest(map, GA);
+    this.nest(map);
+    this.key(map);
+    this.treasure(map);
   },
-  nest(map, GA) {
+  treasure(map) {
+    for (let T of map.treasure) {
+      let grid = Grid.toClass(T.homeGrid);
+      FLOOR_OBJECT.add(new Treasure(grid, TreasureList[T.id]));
+    }
+    console.log("FLOOR_OBJECT", FLOOR_OBJECT);
+  },
+  key(map) {
+    for (let key of map.key) {
+      const grid = Grid.toClass(key.homeGrid);
+      FLOOR_OBJECT.add(new Key(grid));
+    }
+  },
+  nest(map) {
     for (let nest of map.nest) {
       const grid = Grid.toClass(nest.homeGrid);
       const dir = new Angle(nest.angle).getOrtoVector(UP);
-      const nst = new Nest(grid, nest.angle, dir);
-      console.log("nest", nest, nst);
-      NEST.add(nst);
+      NEST.add(new Nest(grid, nest.angle, dir));
     }
-    console.log("NEST", NEST);
   },
   warp(map, GA) {
     for (let warp of map.warp) {
@@ -181,11 +259,11 @@ const SPAWN = {
       GA.toWall(grid);
       GA.addDoor(grid);
     }
-    console.info("BUMP2D", BUMP2D);
   }
 };
 
-var TreasureList = ["coin", "goldbar", "crown", "ring"];
+const TreasureList = ["GoldCoin", "GoldBar", "Ring", "crownPink", "Crown"];
+
 var EnemyList = {
   Snake: {
     speed: 4,

@@ -33,9 +33,15 @@ LoadSprites = [
   { srcName: "UI/stage.png", name: "stage" },
   { srcName: "UI/shieldTime.png", name: "shield" },
   //door
-  { srcName: "Door/door.png", name: "door" },
+  { srcName: "Doors/door.png", name: "door" },
   //key
   { srcName: "Keys/GoldKey.png", name: "key" },
+  //items
+  { srcName: "Items/Crown.png", name: "Crown" },
+  { srcName: "Items/GoldBar.png", name: "GoldBar" },
+  { srcName: "Items/GoldCoin.png", name: "GoldCoin" },
+  { srcName: "Items/Ring.png", name: "Ring" },
+  { srcName: "Items/crownPink.png", name: "crownPink" },
 ];
 
 LoadRotated = [
