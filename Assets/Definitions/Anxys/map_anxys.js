@@ -94,7 +94,6 @@ class VanishingScore {
     }
   }
   draw() {
-    console.log("drawing score", this.text);
     ENGINE.layersToClear.add("dyntext");
     ENGINE.TEXT.setRD(this.RD);
     ENGINE.TEXT.text(this.text, this.pos.x - ENGINE.VIEWPORT.vx, this.pos.y - ENGINE.VIEWPORT.vy);
@@ -113,7 +112,7 @@ class LiftingDoor {
     ENGINE.layersToClear.add("animation");
     ENGINE.drawPart("animation", this.pos.x - ENGINE.VIEWPORT.vx, this.pos.y - ENGINE.VIEWPORT.vy, this.sprite, 0, 0, 0, this.line);
   }
-  change(lapsedTime) {
+  change() {
     this.line++;
   }
   complete() {
@@ -121,12 +120,41 @@ class LiftingDoor {
   }
 }
 
+class Nest {
+  constructor(grid, spriteRotation, dir) {
+    this.grid = grid;
+    this.pos = GRID.gridToCoord(grid);
+    this.spriteRotation = spriteRotation;
+    this.dir = dir;
+    if (spriteRotation !== 270) this.pos.x -= 12;
+    if (spriteRotation !== 0) this.pos.y -= 12;
+  }
+  getSprite() {
+    return SPRITE[`Nest_${this.spriteRotation}`];
+  }
+  draw() {
+    ENGINE.draw('nest', this.pos.x, this.pos.y, this.getSprite());
+  }
+}
+
+
 const SPAWN = {
   spawn(map) {
     const GA = map.map.GA;
     console.log("spawning", map, GA);
     this.warp(map, GA)
     this.door(map, GA);
+    this.nest(map, GA);
+  },
+  nest(map, GA) {
+    for (let nest of map.nest) {
+      const grid = Grid.toClass(nest.homeGrid);
+      const dir = new Angle(nest.angle).getOrtoVector(UP);
+      const nst = new Nest(grid, nest.angle, dir);
+      console.log("nest", nest, nst);
+      NEST.add(nst);
+    }
+    console.log("NEST", NEST);
   },
   warp(map, GA) {
     for (let warp of map.warp) {

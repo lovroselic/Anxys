@@ -40,42 +40,6 @@ const INI = {
   LAST_LEVEL: 10
 };
 
-class Nest {
-  constructor(homeGrid, angle) {
-    this.homeGrid = homeGrid;
-    this.angle = angle;
-  }
-  static toClass(obj) {
-    return new Nest(obj.homeGrid, obj.angle);
-  }
-  same(grid) {
-    if (grid.x === this.homeGrid.x && grid.y === this.homeGrid.y) {
-      return true;
-    } else return false;
-  }
-  getDir() {
-    var x, y;
-    switch (this.angle) {
-      case 0:
-        x = 0;
-        y = -1;
-        break;
-      case 90:
-        x = 1;
-        y = 0;
-        break;
-      case 180:
-        x = 0;
-        y = 1;
-        break;
-      case 270:
-        x = -1;
-        y = 0;
-        break;
-    }
-    return new Vector(x, y);
-  }
-}
 
 class Key {
   constructor(homeGrid) {
@@ -126,7 +90,7 @@ class Treasure {
 }
 
 const PRG = {
-  VERSION: "1.02.15",
+  VERSION: "1.03.00",
   NAME: "Anxys",
   YEAR: "2018",
   CSS: "color: #239AFF;",
@@ -223,6 +187,14 @@ const HERO = {
   changeDirection(dir) {
     if (HERO.moveState.moving) return;
     const nextGrid = HERO.moveState.endGrid.add(dir);
+
+    if (HERO.moveState.gridArray.isOutOfBounds(nextGrid)) {
+      if (GRID.same(MAP[GAME.level].exit, HERO.moveState.homeGrid)) {
+        console.error("EXIT level");
+      }
+
+      return;
+    }
 
     if (HERO.moveState.gridArray.isEmpty(nextGrid)) {
       HERO.moveState.next(dir);
@@ -458,97 +430,6 @@ class MonsterClass {
     this.nextGrid = this.gotoGrid;
   }
 }
-
-const NEST = {
-  canSpawn: false,
-  timeout() {
-    NEST.canSpawn = false;
-    setTimeout(function () {
-      NEST.canSpawn = true;
-    }, INI.SPAWN_DELAY);
-  },
-  manage() {
-    if (ENEMY.pool.length >= INI.MAX_ENEMIES) return;
-    if (!NEST.canSpawn) return;
-    var nest = NEST.selectNest();
-    if (nest) {
-      var type = DEFINE[GAME.level].enemy.chooseRandom();
-      ENEMY.pool.push(
-        new MonsterClass(
-          type,
-          nest.homeGrid,
-          type,
-          nest.getDir(),
-          EnemyList[type].speed,
-          EnemyList[type].foreSight,
-          EnemyList[type].probability,
-          EnemyList[type].score
-        )
-      );
-      NEST.timeout();
-    }
-  },
-  selectNest() {
-    var nests = NEST.findVisible();
-    var NPL = nests.length;
-    for (let q = NPL - 1; q >= 0; q--) {
-      if (!NEST.isFree(nests[q])) {
-        nests.splice(q, 1);
-      }
-    }
-    NPL = nests.length;
-    if (NPL > 1) {
-      for (let q = 0; q < NPL; q++) {
-        nests[q].distance = NEST.distance(nests[q]);
-      }
-      removeDistant(nests);
-    }
-    return nests.chooseRandom();
-
-    function sortDistance(a, b) {
-      return a.distance - b.distance;
-    }
-    function removeDistant(arr) {
-      arr.sort(sortDistance);
-      var min = NEST.distance(arr[0]);
-      var q;
-      for (q = 1; q < arr.length; q++) {
-        if (arr[q].distance > min) break;
-      }
-      arr.length = q;
-    }
-  },
-  distance(nest) {
-    return (
-      Math.abs(HERO.homeGrid.x - nest.homeGrid.x) +
-      Math.abs(HERO.homeGrid.y - nest.homeGrid.y)
-    );
-  },
-  findVisible() {
-    var nest = MAP[GAME.level].nest;
-    var visible = [];
-    var NL = nest.length;
-    var minX = Math.floor(ENGINE.VIEWPORT.vx / ENGINE.INI.GRIDPIX);
-    var maxX = minX + ENGINE.gameWIDTH / ENGINE.INI.GRIDPIX - 1;
-    for (let q = 0; q < NL; q++) {
-      if (nest[q].homeGrid.x >= minX && nest[q].homeGrid.x <= maxX) {
-        visible.push(nest[q]);
-      }
-    }
-    return visible;
-  },
-  isFree(nest) {
-    var free = true;
-    var EPL = ENEMY.pool.length;
-    for (let q = 0; q < EPL; q++) {
-      if (nest.same(ENEMY.pool[q].homeGrid)) {
-        free = false;
-        break;
-      }
-    }
-    return free;
-  }
-};
 
 const ENEMY = {
   pool: [],
@@ -931,7 +812,7 @@ const GAME = {
     GAME.firstFrameDraw(level);
     GAME.timer = new CountDown("gameTime", DEFINE[GAME.level].time, GAME.timeIsUp);
     //debug
-    HERO.goto(new Grid(22, 9));
+    //HERO.goto(new Grid(22, 9));
     //
     GAME.resume();
 
@@ -998,15 +879,15 @@ const GAME = {
     BUMP2D.init(MAP[level].map);
     VANISHING.init(MAP[level].map);
     CHANGING_ANIMATION.init(MAP[level].map);
+    NEST.init(MAP[level].map);
     SPAWN.spawn(MAP[level]);
     BUMP2D.setReindex();
     BUMP2D.manage();
 
     //drawing of statics
     BUMP2D.draw();
-
+    NEST.draw();
     await ENGINE.flattenLayers("nest", "floor");
-
 
     await BITMAP.store(LAYER.floor.canvas, "maze");
 

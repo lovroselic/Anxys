@@ -326,6 +326,13 @@ class Floor_Object extends IAM {
     }
 }
 
+class FloorSpawner extends Floor_Object {
+    constructor(byte = 1, banks = 1) {
+        super();
+        this.IA = `spawner`;
+    }
+}
+
 class Bump2D extends Floor_Object {
     constructor(byte = 1, banks = 1) {
         super();
@@ -1019,6 +1026,7 @@ const FLOOR_OBJECT_WIDE = new Floor_Object(4, 4);
 const DESTRUCTION_ANIMATION = new Destruction_Animation();
 const CHANGING_ANIMATION = new Changing_Animation();
 const BUMP2D = new Bump2D();
+const NEST = new FloorSpawner();
 const MISSILE = new Missile_RC();
 const DECAL = new Decal_IA();
 const DECAL3D = new Decal3D();
