@@ -27,6 +27,7 @@ changelog:
       AUDIO.isPlaying
 4.03: .limit on master grid
 4.04: Angle.getOrtoVector
+      MasterGrid.manhattanDistance
 
 */
 
@@ -535,6 +536,9 @@ class MasterGridClass {
     this.x = Math.min(maxX, Math.max(0, this.x));
     this.y = Math.min(maxY, Math.max(0, this.y));
     return new this.constructor(this.x, this.y);
+  }
+  manhattanDistance(grid) {
+    return Math.abs(this.x - grid.x) + Math.abs(this.y - grid.y);
   }
 }
 

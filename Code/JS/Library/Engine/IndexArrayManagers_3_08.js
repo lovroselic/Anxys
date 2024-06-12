@@ -105,7 +105,7 @@ class IAM {
             if (obj) obj.clean();
         }
     }
-    refresh(){
+    refresh() {
         this.setReindex();
         this.manage();
     }
@@ -334,6 +334,68 @@ class FloorSpawner extends Floor_Object {
     constructor(byte = 1, banks = 1) {
         super();
         this.IA = `spawner`;
+        this.timerID = "SpawnerTimer";
+        this.timer = null;
+    }
+
+    /**
+     * IA is tatic and never changes!
+     */
+    setIA() {
+        let map = this.map;
+        map[this.IA] = new IndexArray(map.width, map.height, this.byte, this.banks);
+        this.reIndex();
+        this.poolToIA(map[this.IA]);
+        this.size = this.POOL.length;
+    }
+
+    /**
+     * 
+     * @param {*} timeout delay between spawns
+     * @param {*} assertionFunc assets the spawning is possible
+     * @param {*} spawnFunc actual spawning function
+     * @param {*} reference to HERO
+     */
+    configure(timeout, assertionFunc, spawnFunc, reference) {
+        this.timeout = timeout;
+        this.assertionFunc = assertionFunc;
+        this.spawnFunc = spawnFunc;
+        this.reference = reference;
+    }
+    start() {
+        console.info("*********************");
+        console.info("NEST started")
+        this.cooldown();
+    }
+    cooldown() {
+        this.timer = new CountDownMS(this.timerID, this.timeout, this.spawn.bind(this));
+    }
+    spawn() {
+        if (this.assertionFunc()) {
+            const nest = this.selectNest();
+            if (nest) this.spawnFunc(nest);
+        }
+        this.cooldown();
+    }
+    selectNest() {
+        /**
+         * sort by path distance, visibility not asserted
+         * returns id of nest or null
+         */
+        let selected = null;
+        let distance = Infinity;
+        const refGrid = this.reference.moveState.homeGrid;
+        GRID.calcDistancesBFS_A(refGrid, this.map)
+
+        for (let nest of this.POOL) {
+            let nestDistance = this.map.GA.nodeMap[nest.grid.x][nest.grid.y];
+            nest.distance = nestDistance.distance;
+            if (nest.distance < distance) {
+                distance = nest.distance;
+                selected = nest.id;
+            }
+        }
+        return selected;
     }
 }
 

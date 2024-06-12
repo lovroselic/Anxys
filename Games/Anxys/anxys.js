@@ -41,7 +41,7 @@ const INI = {
 };
 
 const PRG = {
-  VERSION: "1.03.02",
+  VERSION: "1.03.03",
   NAME: "Anxys",
   YEAR: "2018",
   CSS: "color: #239AFF;",
@@ -110,6 +110,189 @@ const PRG = {
     TITLE.startTitle();
   }
 };
+
+/** classes */
+
+class Destination {
+  constructor(waypoint, origin) {
+    this.waypoint = waypoint;
+    this.origin = origin;
+  }
+}
+
+class Warp {
+  constructor(destination, spriteRotation, dir) {
+    this.destination = destination;
+    this.spriteRotation = spriteRotation;
+    this.dir = dir;
+    this.pos = GRID.gridToCoord(destination.origin);
+    this.grid = this.destination.origin;
+
+    if (spriteRotation !== 270) this.pos.x -= 12;
+    if (spriteRotation !== 0) this.pos.y -= 12;
+  }
+  getSprite() {
+    return SPRITE[`Warp_${this.spriteRotation}`];
+  }
+  draw() {
+    ENGINE.draw('nest', this.pos.x, this.pos.y, this.getSprite());
+  }
+}
+
+class Gate {
+  constructor(grid, GA) {
+    this.grid = grid;
+    this.pos = GRID.gridToCoord(grid);
+    this.GA = GA;
+  }
+  getSprite() {
+    return SPRITE.door;
+  }
+  draw() {
+    ENGINE.draw('template_static', this.pos.x, this.pos.y, this.getSprite());
+  }
+  open() {
+    console.warn("open the door", this.id);
+    this.GA.toEmpty(this.grid);
+    BUMP2D.remove(this.id);
+    BUMP2D.refresh();
+    GAME.updateStatic();
+    CHANGING_ANIMATION.add(new LiftingDoor(this.grid));
+    VANISHING.add(new VanishingScore(this.grid, this.value()));
+  }
+  value() {
+    return 1000;
+  }
+}
+
+class VanishingScore {
+  constructor(grid, text) {
+    this.grid = grid;
+    this.pos = GRID.gridToCenterPX(grid);
+    this.text = text;
+    this.RD = new RenderData("Consolas", 10, "#FFF", "dyntext");
+    this.time = 1000;
+    this.mTime = this.time;
+  }
+  update(lapsedTime) {
+    this.time -= lapsedTime;
+    if (this.time <= 0) {
+      VANISHING.remove(this.id);
+    }
+  }
+  draw() {
+    ENGINE.layersToClear.add("dyntext");
+    ENGINE.TEXT.setRD(this.RD);
+    const CTX = LAYER.dyntext;
+    CTX.save();
+    CTX.globalAlpha = Math.min(1.0, 1.5 * this.time / this.mTime);
+    ENGINE.TEXT.text(this.text, this.pos.x - ENGINE.VIEWPORT.vx, this.pos.y - ENGINE.VIEWPORT.vy);
+    CTX.restore();
+  }
+}
+
+class LiftingDoor {
+  constructor(grid) {
+    this.grid = grid;
+    this.pos = GRID.gridToCoord(grid);
+    this.maxLine = SPRITE.door.height;
+    this.line = 0;
+    this.sprite = SPRITE.door;
+  }
+  draw() {
+    ENGINE.layersToClear.add("animation");
+    ENGINE.drawPart("animation", this.pos.x - ENGINE.VIEWPORT.vx, this.pos.y - ENGINE.VIEWPORT.vy, this.sprite, 0, 0, 0, this.line);
+  }
+  change() {
+    this.line++;
+  }
+  complete() {
+    return this.line >= this.maxLine;
+  }
+}
+
+class Nest {
+  constructor(grid, spriteRotation, dir) {
+    this.grid = grid;
+    this.pos = GRID.gridToCoord(grid);
+    this.spriteRotation = spriteRotation;
+    this.dir = dir;
+    if (spriteRotation !== 270) this.pos.x -= 12;
+    if (spriteRotation !== 0) this.pos.y -= 12;
+    this.distance = null;
+  }
+  getSprite() {
+    return SPRITE[`Nest_${this.spriteRotation}`];
+  }
+  draw() {
+    ENGINE.draw('nest', this.pos.x, this.pos.y, this.getSprite());
+  }
+}
+
+class FloorItem {
+  constructor(grid) {
+    this.grid = grid;
+    this.pos = GRID.gridToCenterPX(grid);
+  }
+  draw() {
+    ENGINE.spriteDraw('template_static', this.pos.x, this.pos.y, this.getSprite());
+  }
+  touch() {
+    if (this.pick()) {
+      ENGINE.VIEWPORT.changed = false;
+      FLOOR_OBJECT.remove(this.id);
+      FLOOR_OBJECT.refresh();
+      GAME.updateStatic();
+      GAME.addScore(this.getValue());
+      VANISHING.add(new VanishingScore(this.grid, this.getValue()));
+    }
+  }
+}
+
+class Key extends FloorItem {
+  constructor(grid) {
+    super(grid);
+    this.value = 500;
+  }
+  getValue() {
+    return this.value;
+  }
+  getSprite() {
+    return SPRITE.key;
+  }
+  pick() {
+    if (HERO.hasKey) return false;
+    HERO.hasKey = true;
+    TITLE.key();
+    return true;
+  }
+}
+
+class Treasure extends FloorItem {
+  static count = -1;
+  constructor(grid, sprite) {
+    super(grid);
+    this.sprite = sprite;
+  }
+  getValue() {
+    return 500 * Math.pow(2, Treasure.count);
+  }
+  getSprite() {
+    return SPRITE[this.sprite];
+  }
+  pick() {
+    Treasure.inc();
+    return true;
+  }
+  static reset() {
+    Treasure.count = -1;
+  }
+  static inc() {
+    Treasure.count++;
+  }
+}
+
+/** */
 
 const HERO = {
   goto(grid) {
@@ -364,30 +547,6 @@ class Laser {
       default:
         console.log(this, "evolve direction ERROR");
     }
-  }
-}
-class MonsterClass {
-  constructor(type, grid, sprite, dir, speed, foreSight, probability, score) {
-    this.type = type;
-    this.homeGrid = new Vector(grid.x, grid.y);
-    this.dir = new Vector(dir.x, dir.y);
-    this.prevDir = new Vector(0, 0);
-    this.speed = speed;
-    this.foreSight = foreSight;
-    this.probability = probability;
-    this.score = score;
-    this.actor = new ACTOR(sprite, 0, 0, "front", ASSET[sprite]);
-    GRID.gridToSprite(this.homeGrid, this.actor);
-    this.actor.orientation = this.actor.getOrientation(this.dir);
-    this.actor.animateMove(this.actor.orientation);
-    this.moves = true;
-    this.gotoGrid = new Vector(
-      this.homeGrid.x + this.dir.x,
-      this.homeGrid.y + this.dir.y
-    );
-    this.history = [];
-    this.dirStack = [];
-    this.nextGrid = this.gotoGrid;
   }
 }
 
@@ -716,6 +875,45 @@ const ENEMY = {
   }
 };
 
+
+
+class MonsterClass {
+  constructor(type, grid, sprite, dir, speed, foreSight, probability, score) {
+    this.type = type;
+    this.homeGrid = new Vector(grid.x, grid.y);
+    this.dir = new Vector(dir.x, dir.y);
+    this.prevDir = new Vector(0, 0);
+    this.speed = speed;
+    this.foreSight = foreSight;
+    this.probability = probability;
+    this.score = score;
+    this.actor = new ACTOR(sprite, 0, 0, "front", ASSET[sprite]);
+    GRID.gridToSprite(this.homeGrid, this.actor);
+    this.actor.orientation = this.actor.getOrientation(this.dir);
+    this.actor.animateMove(this.actor.orientation);
+    this.moves = true;
+    this.gotoGrid = new Vector(
+      this.homeGrid.x + this.dir.x,
+      this.homeGrid.y + this.dir.y
+    );
+    this.history = [];
+    this.dirStack = [];
+    this.nextGrid = this.gotoGrid;
+  }
+}
+
+class Enemy {
+  constructor(grid, dir, type, name) {
+    this.grid = grid;
+    this.dir = dir;
+    this.type = type;
+    for (let prop in type) {
+      this[prop] = type[prop];
+    }
+    this.name = name;
+  }
+}
+
 const GAME = {
   start() {
     console.log("GAME started");
@@ -776,6 +974,7 @@ const GAME = {
     HERO.goto(new Grid(11, 1)); //key
     //HERO.hasKey = true; //DEBUG
     //
+    NEST.start();
     GAME.resume();
 
     /* HERO.init();
@@ -790,6 +989,18 @@ const GAME = {
     GAME.timeStart = Date.now();
     ENGINE.GAME.stopAnimation = false;
     ENGINE.GAME.run(GAME.run); */
+  },
+  canSpawn() {
+    //console.log("canSpawn", INI.MAX_ENEMIES, ENEMY.pool.length);
+    return ENEMY.pool.length < INI.MAX_ENEMIES;
+  },
+  spawn(id) {
+    const typeName = DEFINE[GAME.level].enemy.chooseRandom();
+    const type = EnemyList[typeName];
+    const nest = NEST.show(id);
+    //console.log(".nest", nest);
+    const enemy = new Enemy(nest.grid, nest.dir, type, typeName);
+    console.warn("spawning... from", id, "enemy", enemy);
   },
   timeIsUp() {
     console.error("TIME ENDS");
@@ -842,10 +1053,14 @@ const GAME = {
     VANISHING.init(MAP[level].map);
     CHANGING_ANIMATION.init(MAP[level].map);
     NEST.init(MAP[level].map);
+    NEST.setIA();
+    NEST.configure(INI.SPAWN_DELAY, GAME.canSpawn, GAME.spawn, HERO);
+    console.info("NEST", NEST);
     FLOOR_OBJECT.init(MAP[level].map);
     SPAWN.spawn(MAP[level]);
     BUMP2D.refresh();
     FLOOR_OBJECT.refresh();
+    ENEMY_TG.init(MAP[level]);
 
     //drawing of statics
     BUMP2D.draw();
