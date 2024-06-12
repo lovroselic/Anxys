@@ -49,6 +49,23 @@ LoadRotated = [
   { srcName: "Nest.png", name: "Nest", rotate: { first: 0, last: 270, step: 90 } },
 ];
 
+LoadSheets = [
+  { srcName: "behemoth", type: "png", count: 4, name: "Behemoth" },
+  { srcName: "CoinBoss", type: "png", count: 4, name: "Puffy" },
+  { srcName: "death2", type: "png", count: 4, name: "Death2" },
+  { srcName: "death1", type: "png", count: 4, name: "Death1" },
+  { srcName: "devil", type: "png", count: 4, name: "Devil" },
+  { srcName: "dragon2", type: "png", count: 3, name: "LittleDragon" },
+  { srcName: "gandalf", type: "png", count: 4, name: "Wizard" },
+  { srcName: "Ghost2", type: "png", count: 4, name: "UglyGhost" },
+  { srcName: "ghost3", type: "png", count: 4, name: "ScaryGhost" },
+  { srcName: "Ghost4", type: "png", count: 4, name: "Ghost" },
+  { srcName: "sanke", type: "png", count: 4, name: "Snake" },
+  { srcName: "skelly1", type: "png", count: 4, name: "Skeleton" },
+  { srcName: "skelly4", type: "png", count: 4, name: "ZombieGirl" },
+  { srcName: "zombie2", type: "png", count: 3, name: "Ghoul" },
+];
+
 console.log("Assets for Anxys completed");
 
 /* var BrickWall = new Tile("BrickWall", 128, 128, "jpg");
@@ -741,7 +758,7 @@ var Death1_back = new Tile(
     );
     //
     //
-    ASSET.Zombie = new LiveSPRITE(
+    ASSET.Ghoul = new LiveSPRITE(
       [SPRITE.Zombie_left_0, SPRITE.Zombie_left_1, SPRITE.Zombie_left_2],
       [SPRITE.Zombie_right_0, SPRITE.Zombie_right_1, SPRITE.Zombie_right_2],
       [SPRITE.Zombie_front_0, SPRITE.Zombie_front_1, SPRITE.Zombie_front_2],

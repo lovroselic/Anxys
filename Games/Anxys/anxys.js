@@ -41,7 +41,7 @@ const INI = {
 };
 
 const PRG = {
-  VERSION: "1.03.03",
+  VERSION: "1.03.04",
   NAME: "Anxys",
   YEAR: "2018",
   CSS: "color: #239AFF;",
@@ -906,11 +906,23 @@ class Enemy {
   constructor(grid, dir, type, name) {
     this.grid = grid;
     this.dir = dir;
-    this.type = type;
     for (let prop in type) {
       this[prop] = type[prop];
     }
-    this.name = name;
+    this.name = name; //also sprite, asset name
+    this.asset = ASSET[name];
+    this.spriteClass = name;
+    this.actor = new ACTOR(this.spriteClass, 0, 0, "front", this.asset);
+    this.moveState = new MoveState(grid, this.dir, MAP[GAME.level].map.GA);
+    GRID.gridToSprite(grid, this.actor);
+    this.actor.orientation = this.actor.getOrientation(this.dir);
+    this.actor.animateMove(this.actor.orientation);
+    ENGINE.VIEWPORT.alignTo(this.actor);
+  }
+  manage(lapsedTime, HERO) { }
+  draw() {
+    ENGINE.layersToClear.add("enemy");
+    ENGINE.spriteDraw('enemy', this.actor.vx, this.actor.vy, this.actor.sprite());
   }
 }
 
@@ -977,18 +989,6 @@ const GAME = {
     NEST.start();
     GAME.resume();
 
-    /* HERO.init();
-    NEST.timeout();
-    ENEMY.pool.clear();
-    LASER.pool.clear();
-    HERO.canShoot = true;
-    HERO.lamp = true;
-    GAME.firstFrameDraw(GAME.level);
-    GAME.timeRemains = DEFINE[GAME.level].time;
-    GAME.levelCompleted = false;
-    GAME.timeStart = Date.now();
-    ENGINE.GAME.stopAnimation = false;
-    ENGINE.GAME.run(GAME.run); */
   },
   canSpawn() {
     //console.log("canSpawn", INI.MAX_ENEMIES, ENEMY.pool.length);
@@ -1000,6 +1000,7 @@ const GAME = {
     const nest = NEST.show(id);
     //console.log(".nest", nest);
     const enemy = new Enemy(nest.grid, nest.dir, type, typeName);
+    ENEMY_TG.add(enemy);
     console.warn("spawning... from", id, "enemy", enemy);
   },
   timeIsUp() {
@@ -1060,7 +1061,7 @@ const GAME = {
     SPAWN.spawn(MAP[level]);
     BUMP2D.refresh();
     FLOOR_OBJECT.refresh();
-    ENEMY_TG.init(MAP[level]);
+    ENEMY_TG.init(MAP[level].map);
 
     //drawing of statics
     BUMP2D.draw();
@@ -1153,13 +1154,14 @@ const GAME = {
     if (ENGINE.GAME.stopAnimation) return;
 
     HERO.manage(lapsedTime);
-    //BUMP2D.manage(lapsedTime);            // this is done when even requires it
+    //BUMP2D.manage(lapsedTime);            // this is done when event requires it
     //NEST.manage();
     // ENEMY.move();
     //ENEMY.collideLaser();
     //ENEMY.collideHero();
     VANISHING.manage(lapsedTime);
     CHANGING_ANIMATION.manage(lapsedTime);
+    ENEMY_TG.manage(lapsedTime, HERO);
     GAME.respond();
     ENGINE.TIMERS.update();
     GAME.frameDraw(lapsedTime);
@@ -1167,6 +1169,7 @@ const GAME = {
   frameDraw(lapsedTime) {
     ENGINE.clearLayerStack();
     GAME.updateVieport();
+    ENEMY_TG.draw();
     HERO.draw();
     VANISHING.draw();
     CHANGING_ANIMATION.draw();

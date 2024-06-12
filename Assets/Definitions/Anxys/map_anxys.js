@@ -14,15 +14,15 @@ var MAP = {
 
 //Time & enemy 
 const DEFINE = {
-  1: { time: 60, enemy: ["Snake", "Snake", "Snake", "ghost4"] },
-  2: { time: 120, enemy: ["Snake", "Snake", "ghost4"] },
-  3: { time: 180, enemy: ["Snake", "Skeleton", "ghost4"] },
-  4: { time: 220, enemy: ["Snake", "Skeleton", "Skeleton4", "ghost4", "Zombie"] },
-  5: { time: 180, enemy: ["Snake", "Skeleton", "Skeleton4", "ghost4", "Skeleton4", "ghost4", "Zombie"] },
-  6: { time: 120, enemy: ["Snake", "Skeleton", "Skeleton", "Skeleton4", "Skeleton4", "Zombie", "Zombie", "Devil"] },
-  7: { time: 60, enemy: ["Snake", "Skeleton", "Skeleton", "Skeleton4", "Skeleton4", "Zombie", "Zombie", "Devil", "Death1"] },
-  8: { time: 90, enemy: ["Snake", "Skeleton", "Skeleton4", "Zombie", "Devil", "Death1", "Death2"] },
-  9: { time: 90, enemy: ["Zombie", "Devil", "Death1", "Death2"] },
+  1: { time: 60, enemy: ["Snake", "Snake", "Snake", "Ghost"] },
+  2: { time: 120, enemy: ["Snake", "Snake", "Ghost"] },
+  3: { time: 180, enemy: ["Snake", "Skeleton", "Ghost"] },
+  4: { time: 220, enemy: ["Snake", "Skeleton", "ZombieGirl", "Ghost", "Ghoul"] },
+  5: { time: 180, enemy: ["Snake", "Skeleton", "ZombieGirl", "Ghost", "ZombieGirl", "Ghost", "Ghoul"] },
+  6: { time: 120, enemy: ["Snake", "Skeleton", "Skeleton", "ZombieGirl", "ZombieGirl", "Ghoul", "Ghoul", "Devil"] },
+  7: { time: 60, enemy: ["Snake", "Skeleton", "Skeleton", "ZombieGirl", "ZombieGirl", "Ghoul", "Ghoul", "Devil", "Death1"] },
+  8: { time: 90, enemy: ["Snake", "Skeleton", "ZombieGirl", "Ghoul", "Devil", "Death1", "Death2"] },
+  9: { time: 90, enemy: ["Ghoul", "Devil", "Death1", "Death2"] },
   10: { time: 120, enemy: ["Devil", "Death1", "Death2"] },
 };
 
@@ -102,19 +102,19 @@ const EnemyList = {
     probability: 60,
     score: 20
   },
-  Skeleton4: {
+  ZombieGirl: {
     speed: 6,
     foreSight: 3,
     probability: 80,
     score: 25
   },
-  ghost4: {
+  Ghost: {
     speed: 6,
     foreSight: 2,
     probability: 90,
     score: 50
   },
-  Zombie: {
+  Ghoul: {
     speed: 6,
     foreSight: 1,
     probability: 95,
