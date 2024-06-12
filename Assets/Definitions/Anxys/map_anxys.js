@@ -68,8 +68,7 @@ class Gate {
     console.warn("open the door", this.id);
     this.GA.toEmpty(this.grid);
     BUMP2D.remove(this.id);
-    BUMP2D.setReindex();
-    BUMP2D.manage();
+    BUMP2D.refresh();
     GAME.updateStatic();
     CHANGING_ANIMATION.add(new LiftingDoor(this.grid));
     VANISHING.add(new VanishingScore(this.grid, this.value()));
@@ -146,8 +145,14 @@ class FloorItem {
     ENGINE.spriteDraw('template_static', this.pos.x, this.pos.y, this.getSprite());
   }
   touch() {
-    this.pick();
-    ENGINE.VIEWPORT.changed = false;
+    if (this.pick()) {
+      ENGINE.VIEWPORT.changed = false;
+      FLOOR_OBJECT.remove(this.id);
+      FLOOR_OBJECT.refresh();
+      GAME.updateStatic();
+      GAME.addScore(this.getValue());
+      VANISHING.add(new VanishingScore(this.grid, this.getValue()));
+    }
   }
 }
 
@@ -156,53 +161,43 @@ class Key extends FloorItem {
     super(grid);
     this.value = 500;
   }
+  getValue() {
+    return this.value;
+  }
   getSprite() {
     return SPRITE.key;
   }
-  pick() { }
+  pick() {
+    if (HERO.hasKey) return false;
+    HERO.hasKey = true;
+    TITLE.key();
+    return true;
+  }
 }
 
 class Treasure extends FloorItem {
+  static count = -1;
   constructor(grid, sprite) {
     super(grid);
     this.sprite = sprite;
   }
+  getValue() {
+    return 500 * Math.pow(2, Treasure.count);
+  }
   getSprite() {
     return SPRITE[this.sprite];
   }
-  pick() { }
-}
-
-/* class Treasure {
-  constructor(homeGrid) {
-    this.homeGrid = homeGrid;
+  pick() {
     Treasure.inc();
-    this.id = Treasure.count - 1;
-  }
-  static toClass(obj) {
-    return new Treasure(obj.homeGrid);
-  }
-  static inc() {
-    this.count = this.getCount() + 1;
-  }
-  static dec() {
-    this.count = this.getCount() - 1;
-  }
-  static getCount() {
-    return this.count || 0;
+    return true;
   }
   static reset() {
-    this.count = 0;
+    Treasure.count = -1;
   }
-  same(grid) {
-    if (grid.x === this.homeGrid.x && grid.y === this.homeGrid.y) {
-      return true;
-    } else return false;
+  static inc() {
+    Treasure.count++;
   }
-  value() {
-    return 500 * Math.pow(2, this.id);
-  }
-} */
+}
 
 const SPAWN = {
   spawn(map) {
@@ -215,6 +210,7 @@ const SPAWN = {
     this.treasure(map);
   },
   treasure(map) {
+    Treasure.reset();
     for (let T of map.treasure) {
       let grid = Grid.toClass(T.homeGrid);
       FLOOR_OBJECT.add(new Treasure(grid, TreasureList[T.id]));

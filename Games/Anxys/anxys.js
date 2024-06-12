@@ -41,7 +41,7 @@ const INI = {
 };
 
 const PRG = {
-  VERSION: "1.03.01",
+  VERSION: "1.03.02",
   NAME: "Anxys",
   YEAR: "2018",
   CSS: "color: #239AFF;",
@@ -126,7 +126,18 @@ const HERO = {
   },
   manage(lapsedTime) {
     HERO.move(lapsedTime);
+    HERO.checkItemColission();
 
+  },
+  checkItemColission() {
+    if (HERO.moveState.moving) return;
+    if (!HERO.moved) return;
+    const IA = MAP[GAME.level].map[FLOOR_OBJECT.IA]
+    const id = IA.unroll(HERO.moveState.homeGrid);
+    if (id.length) {
+      const item = FLOOR_OBJECT.show(id);
+      item.touch();
+    }
   },
   move(lapsedTime) {
     if (HERO.dead) return;
@@ -208,8 +219,6 @@ const HERO = {
     ENGINE.VIEWPORT.check(HERO.actor);
     ENGINE.VIEWPORT.alignTo(HERO.actor);
     HERO.hasKey = false;
-    HERO.hasKey = true; //DEBUG
-
     HERO.moved = true;
     HERO.right = MAP[GAME.level].pw - HERO.left;
     HERO.down = MAP[GAME.level].ph - HERO.up;
@@ -763,7 +772,9 @@ const GAME = {
     GAME.firstFrameDraw(level);
     GAME.timer = new CountDown("gameTime", DEFINE[GAME.level].time, GAME.timeIsUp);
     //debug
-    //HERO.goto(new Grid(22, 9));
+    //HERO.goto(new Grid(22, 9)); //exit
+    HERO.goto(new Grid(11, 1)); //key
+    //HERO.hasKey = true; //DEBUG
     //
     GAME.resume();
 
@@ -833,8 +844,8 @@ const GAME = {
     NEST.init(MAP[level].map);
     FLOOR_OBJECT.init(MAP[level].map);
     SPAWN.spawn(MAP[level]);
-    BUMP2D.setReindex();
-    BUMP2D.manage();
+    BUMP2D.refresh();
+    FLOOR_OBJECT.refresh();
 
     //drawing of statics
     BUMP2D.draw();
@@ -879,20 +890,8 @@ const GAME = {
     FLOOR_OBJECT.draw();
 
     ENGINE.VIEWPORT.changed = true;
-    /*  ENGINE.clearLayer("template_static");
-     GRID.paintDoor(MAP[level].door, "template_static", false);
-     GRID.paintKey(MAP[level].key, "template_static", false);
-     GRID.paintTreasure(
-       MAP[level].treasure,
-       "template_static",
-       false,
-       TreasureList
-     ); */
+
   },
-  /*   drawAnimation() {
-      TEXTPOOL.draw("animation");
-      SpritePOOL.draw("animation");
-    }, */
   firstFrameDraw(level) {
     console.log("drawing first frame");
     ENGINE.clearLayerStack();

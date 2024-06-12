@@ -105,6 +105,10 @@ class IAM {
             if (obj) obj.clean();
         }
     }
+    refresh(){
+        this.setReindex();
+        this.manage();
+    }
 }
 
 /** Profile IA Managers */
