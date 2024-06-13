@@ -41,7 +41,7 @@ const INI = {
 };
 
 const PRG = {
-  VERSION: "1.03.04",
+  VERSION: "1.03.05",
   NAME: "Anxys",
   YEAR: "2018",
   CSS: "color: #239AFF;",
@@ -550,358 +550,6 @@ class Laser {
   }
 }
 
-const ENEMY = {
-  pool: [],
-  collideHero() {
-    var EPL = ENEMY.pool.length;
-    for (let q = 0; q < EPL; q++) {
-      let hit = ENGINE.collision(HERO.actor, ENEMY.pool[q].actor);
-      if (hit) HERO.die();
-    }
-  },
-  killAll() {
-    var EPL = ENEMY.pool.length;
-    for (let q = EPL - 1; q >= 0; q--) {
-      let enemy = ENEMY.pool[q];
-      EXPLOSIONS.pool.push(
-        new AnimationSPRITE(enemy.actor.x, enemy.actor.y, "AlienExp", 6)
-      );
-      GAME.score += enemy.score;
-    }
-    ENEMY.pool.clear();
-  },
-  collideLaser() {
-    var EPL = ENEMY.pool.length;
-    if (EPL === 0) return;
-    for (let q = EPL - 1; q >= 0; q--) {
-      let enemy = ENEMY.pool[q];
-      let tempActor = {
-        name: enemy.actor.name,
-        x: enemy.actor.x - ENGINE.VIEWPORT.vx,
-        y: enemy.actor.y - ENGINE.VIEWPORT.vy,
-        width: enemy.actor.width,
-        height: enemy.actor.height
-      };
-      let hit = ENGINE.collisionToBackground(tempActor, LAYER.laser);
-      if (hit) {
-        EXPLOSIONS.pool.push(
-          new AnimationSPRITE(enemy.actor.x, enemy.actor.y, "AlienExp", 6)
-        );
-        GAME.score += enemy.score;
-        ENEMY.pool.splice(q, 1);
-      }
-    }
-  },
-  draw() {
-    var EPL = ENEMY.pool.length;
-    if (EPL === 0) return;
-    var CXT = LAYER.enemy;
-    ENGINE.layersToClear.add("enemy");
-    for (let q = 0; q < EPL; q++) {
-      ENGINE.spriteDraw(
-        "enemy",
-        ENEMY.pool[q].actor.x - ENGINE.VIEWPORT.vx,
-        ENEMY.pool[q].actor.y - ENGINE.VIEWPORT.vy,
-        ENEMY.pool[q].actor.sprite()
-      );
-    }
-  },
-  move() {
-    var EPL = ENEMY.pool.length;
-    if (EPL === 0) return;
-    for (let q = EPL - 1; q >= 0; q--) {
-      if (isInvisible(ENEMY.pool[q])) {
-        ENEMY.pool.splice(q, 1);
-      }
-    }
-    //
-    EPL = ENEMY.pool.length;
-    for (let q = 0; q < EPL; q++) {
-      var enemy = ENEMY.pool[q];
-      if (enemy.moves) {
-        move(enemy);
-      } else {
-        if (enemy.dirStack && enemy.dirStack.length > 0) {
-          let go = enemy.dirStack.shift();
-          commitMove(enemy, new Direction(go, 1));
-          return;
-        } else {
-          if (enemy.history.length >= 4) {
-            if (checkHistory(enemy.history)) {
-              enemy.dirStack = findPath(enemy.homeGrid, HERO.homeGrid);
-              if (enemy.dirStack === null) {
-              } else {
-                let go = enemy.dirStack.shift();
-                commitMove(enemy, new Direction(go, 1));
-                return;
-              }
-            }
-          }
-          var directions = getDirections(enemy.homeGrid);
-          if (directions.length > 1) {
-            for (let w = 0; w < EPL; w++) {
-              if (w === q) continue;
-              var comrade = ENEMY.pool[w];
-              var DL = directions.length;
-              for (let dr = 0; dr < DL; dr++) {
-                if (comrade.nextGrid) {
-                  if (
-                    enemy.homeGrid.x + directions[dr].dir.x ===
-                    comrade.nextGrid.x &&
-                    enemy.homeGrid.y + directions[dr].dir.y ===
-                    comrade.nextGrid.y
-                  ) {
-                    directions[dr].weight++;
-                  }
-                }
-              }
-            }
-            cullHeavy(directions);
-          }
-          var goal = enemy.homeGrid.directionSolutions(HERO.homeGrid);
-          var index = -1;
-          if (probable(enemy.probability)) {
-            for (var i = 0; i < goal.length; i++) {
-              index = goal[i].isInAt(directions);
-              if (index !== -1) break;
-            }
-          }
-          if (index === -1) {
-            if (directions.length > 1) {
-              var remove = enemy.prevDir.isInAt(directions);
-              if (remove !== -1) {
-                directions.splice(remove, 1);
-              }
-            }
-            index = RND(0, directions.length - 1);
-          }
-
-          var len = Math.min(directions[index].len, RND(1, enemy.foreSight));
-          directions[index].len = len;
-          commitMove(enemy, directions[index]);
-        }
-      }
-    }
-    return;
-
-    function findPath(start, finish) {
-      var Q = new NodeQ();
-      Q.list.push(new SearchNode(start, finish, [new Vector(0, 0)]));
-      if (Q.list[0].dist === 0) return null;
-      var round = 1;
-      var perfect = Q.list[0].dist;
-      var selected;
-      while (Q.list.length > 0) {
-        selected = Q.list.shift();
-        let dirs = getDirections(selected.grid);
-        let back = selected.prevDir[selected.prevDir.length - 1].mirror();
-        let iB = back.isInAt(dirs);
-        if (iB !== -1) {
-          let waste = dirs.splice(iB, 1);
-        }
-        for (let q = 0; q < dirs.length; q++) {
-          let HG = new Vector(
-            selected.grid.x + dirs[q].dir.x,
-            selected.grid.y + dirs[q].dir.y
-          );
-          let I_stack = [].concat(selected.prevDir);
-          I_stack.push(dirs[q].dir);
-          let node = new SearchNode(HG, finish, I_stack, selected.path + 1);
-          if (node.dist === 0) {
-            node.prevDir.splice(0, 1);
-            return node.prevDir;
-          }
-          if (node.priority < perfect + INI.PATH_TOLERANCE) Q.queue(node);
-        }
-        round++;
-        if (round > INI.PATH_ROUNDS) break;
-      }
-      if (Q.list.length > 0) {
-        Q.list[0].prevDir.splice(0, 1);
-        return Q.list[0].prevDir;
-      } else {
-        selected.prevDir.splice(0, 1);
-        return selected.prevDir;
-      }
-    }
-
-    function checkHistory(history) {
-      let analysis = analyzeHistory(history);
-      let stuck = isStuck(analysis);
-      if (stuck) {
-        history.clear();
-      } else {
-        var i = analysis.lastIndexOf("*");
-        if (i > -1) {
-          history.splice(0, i + 2);
-        } else history.clear();
-      }
-      return stuck;
-    }
-
-    function isStuck(arr) {
-      //return evaluateArray(arr, 3, "*");
-      return evaluateArray(arr, 2, "*");
-
-      function evaluateArray(arr, count, element) {
-        var i = arr.indexOf(element);
-        if (i === -1) return false;
-        var j;
-        var result = true;
-        count--;
-        while (count > 0) {
-          j = arr.indexOf(element, i + 1);
-          if (j !== i + 1) {
-            result = false;
-            break;
-          }
-          count--;
-          i = j;
-        }
-        return result;
-      }
-    }
-
-    function analyzeHistory(history) {
-      var analysis = [];
-      for (let q = 0; q < history.length - 1; q++) {
-        let x =
-          history[q].dir.x * history[q].len +
-          history[q + 1].dir.x * history[q + 1].len;
-        let y =
-          history[q].dir.y * history[q].len +
-          history[q + 1].dir.y * history[q + 1].len;
-        if (x === 0 && y === 0) {
-          analysis.push("*");
-        } else analysis.push("OK");
-      }
-      return analysis;
-    }
-
-    function commitMove(enemy, direction) {
-      enemy.gotoGrid = new Vector(
-        enemy.homeGrid.x + direction.dir.x * direction.len,
-        enemy.homeGrid.y + direction.dir.y * direction.len
-      );
-      enemy.nextGrid = new Vector(
-        enemy.homeGrid.x + direction.dir.x,
-        enemy.homeGrid.y + direction.dir.y
-      );
-      enemy.prevDir = enemy.dir;
-      enemy.dir = new Vector(direction.dir.x, direction.dir.y);
-      enemy.moves = true;
-      enemy.history.push(direction);
-    }
-
-    function isInvisible(enemy) {
-      var minX =
-        Math.floor(ENGINE.VIEWPORT.vx / ENGINE.INI.GRIDPIX) -
-        INI.ENEMY_VISIBILITY_TOLERANCE;
-      var maxX =
-        minX +
-        ENGINE.gameWIDTH / ENGINE.INI.GRIDPIX -
-        1 +
-        INI.ENEMY_VISIBILITY_TOLERANCE;
-      if (enemy.homeGrid.x < minX || enemy.homeGrid.x > maxX) {
-        return true;
-      } else return false;
-    }
-
-    function move(enemy) {
-      enemy.actor.x += enemy.dir.x * enemy.speed;
-      enemy.actor.y += enemy.dir.y * enemy.speed;
-      enemy.actor.orientation = enemy.actor.getOrientation(enemy.dir);
-      enemy.actor.animateMove(enemy.actor.orientation);
-      if (arrived(enemy)) {
-        enemy.moves = false;
-        enemy.homeGrid = enemy.gotoGrid;
-        enemy.gotoGrid = null;
-        enemy.nextGrid = null;
-      } else {
-        var GRD = GRID.trueToGrid(enemy.actor);
-        if (GRD !== null) {
-          enemy.homeGrid = GRD;
-          enemy.nextGrid = new Vector(
-            enemy.homeGrid.x + enemy.dir.x,
-            enemy.homeGrid.y + enemy.dir.y
-          );
-        }
-      }
-    }
-
-    function arrived(enemy) {
-      var goal = GRID.gridToCenterPX(enemy.gotoGrid);
-      if (enemy.actor.x === goal.x && enemy.actor.y === goal.y) {
-        return true;
-      } else return false;
-    }
-    function getDirections(grid) {
-      var directions = [];
-      for (let D = 0; D < ENGINE.directions.length; D++) {
-        var i;
-        for (i = 0; i < INI.MAX_FORESIGHT; i++) {
-          let x = grid.x + ENGINE.directions[D].x * (i + 1);
-          let y = grid.y + ENGINE.directions[D].y * (i + 1);
-          if (
-            x < 0 ||
-            y < 0 ||
-            x >= MAP[GAME.level].width ||
-            y >= MAP[GAME.level].height
-          )
-            break;
-          if (GRID.isBlock(x, y)) break;
-          if (GRID.isDoor(x, y)) break;
-        }
-        if (i > 0) directions.push(new Direction(ENGINE.directions[D], i));
-      }
-      return directions;
-    }
-
-    function cullHeavy(arr) {
-      arr.sort(sortWeight);
-      removeHeavy(arr);
-    }
-
-    function sortWeight(a, b) {
-      return a.weight - b.weight;
-    }
-
-    function removeHeavy(arr) {
-      let last = arr.length - 1;
-      if (arr.length > 1 && arr[last].weight > arr[last - 1].weight)
-        arr.splice(last, 1);
-      if (arr.length > 1 && arr[0].weight < arr[1].weight) arr.splice(1, last);
-    }
-  }
-};
-
-
-
-class MonsterClass {
-  constructor(type, grid, sprite, dir, speed, foreSight, probability, score) {
-    this.type = type;
-    this.homeGrid = new Vector(grid.x, grid.y);
-    this.dir = new Vector(dir.x, dir.y);
-    this.prevDir = new Vector(0, 0);
-    this.speed = speed;
-    this.foreSight = foreSight;
-    this.probability = probability;
-    this.score = score;
-    this.actor = new ACTOR(sprite, 0, 0, "front", ASSET[sprite]);
-    GRID.gridToSprite(this.homeGrid, this.actor);
-    this.actor.orientation = this.actor.getOrientation(this.dir);
-    this.actor.animateMove(this.actor.orientation);
-    this.moves = true;
-    this.gotoGrid = new Vector(
-      this.homeGrid.x + this.dir.x,
-      this.homeGrid.y + this.dir.y
-    );
-    this.history = [];
-    this.dirStack = [];
-    this.nextGrid = this.gotoGrid;
-  }
-}
-
 class Enemy {
   constructor(grid, dir, type, name) {
     this.grid = grid;
@@ -918,8 +566,26 @@ class Enemy {
     this.actor.orientation = this.actor.getOrientation(this.dir);
     this.actor.animateMove(this.actor.orientation);
     ENGINE.VIEWPORT.alignTo(this.actor);
+    console.log(this.foreSight, this.foreSight + 1, typeof (this.foreSight));
+    this.behaviour = new Behaviour(this.foreSight + 1, ["wanderer"], this.foreSight, ["advancer"]);
+    this.distance = null;
+    this.dirStack = [];
   }
-  manage(lapsedTime, HERO) { }
+  manage(lapsedTime, IA, map) {
+
+    this.setDistanceFromNodeMap(map.GA.nodeMap);
+
+    console.info("Manage", this.id, this.distance);
+    //trim those out of sight
+    //move if it moves
+    //set behaviour
+    this.behaviour.manage(this, this.distance, false);
+    console.log(".strategy", this.behaviour.strategy);
+    //set next move
+  }
+  setDistanceFromNodeMap(nodemap) {
+    this.distance = nodemap[this.moveState.homeGrid.x][this.moveState.homeGrid.y].distance;
+  }
   draw() {
     ENGINE.layersToClear.add("enemy");
     ENGINE.spriteDraw('enemy', this.actor.vx, this.actor.vy, this.actor.sprite());
@@ -937,6 +603,7 @@ const GAME = {
     $(ENGINE.topCanvas).off("click", ENGINE.mouseClick);
     $(ENGINE.topCanvas).css("cursor", "");
     ENGINE.hideMouse();
+    AI.VERBOSE = true;
 
     $("#pause").prop("disabled", false);
     $("#pause").off();
@@ -988,11 +655,9 @@ const GAME = {
     //
     NEST.start();
     GAME.resume();
-
   },
   canSpawn() {
-    //console.log("canSpawn", INI.MAX_ENEMIES, ENEMY.pool.length);
-    return ENEMY.pool.length < INI.MAX_ENEMIES;
+    return ENEMY_TG.POOL.length < INI.MAX_ENEMIES;
   },
   spawn(id) {
     const typeName = DEFINE[GAME.level].enemy.chooseRandom();

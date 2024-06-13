@@ -3311,6 +3311,7 @@ class MoveState {
     this.startGrid = Grid.toClass(grid);
     this.homeGrid = Grid.toClass(grid);
     this.endGrid = Grid.toClass(grid);
+    this.pos = this.homeGrid;
     this.moving = false;
   }
 }
