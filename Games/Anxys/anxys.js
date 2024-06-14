@@ -41,7 +41,7 @@ const INI = {
 };
 
 const PRG = {
-  VERSION: "1.03.05",
+  VERSION: "1.03.06",
   NAME: "Anxys",
   YEAR: "2018",
   CSS: "color: #239AFF;",
@@ -578,10 +578,15 @@ class Enemy {
     console.info("Manage", this.id, this.distance);
     //trim those out of sight
     //move if it moves
+    //enemy translate position
+
+
     //set behaviour
     this.behaviour.manage(this, this.distance, false);
     console.log(".strategy", this.behaviour.strategy);
     //set next move
+
+    
   }
   setDistanceFromNodeMap(nodemap) {
     this.distance = nodemap[this.moveState.homeGrid.x][this.moveState.homeGrid.y].distance;
