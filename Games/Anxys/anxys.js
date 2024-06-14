@@ -16,6 +16,7 @@ const DEBUG = {
   FPS: true,
   GRID: true,
   COORD: true,
+  GOD: true,
 };
 
 const INI = {
@@ -310,11 +311,17 @@ const HERO = {
   manage(lapsedTime) {
     HERO.move(lapsedTime);
     HERO.checkItemColission();
-    HERO.checkEnemyCollision();
+    if (ENEMY_TG.POOL.length) HERO.checkEnemyCollision();
   },
   checkEnemyCollision() {
-    
-   },
+    const IA = MAP[GAME.level].map[ENEMY_TG.IA]
+    const id = IA.unroll(HERO.moveState.homeGrid);
+    if (id.length) {
+      console.warn("enemy collision to id", id);
+      ENEMY_TG.remove(id);
+      HERO.die();
+    }
+  },
   checkItemColission() {
     if (HERO.moveState.moving) return;
     if (!HERO.moved) return;
@@ -422,7 +429,8 @@ const HERO = {
   },
   die() {
     if (HERO.dead) return;
-    ENGINE.GAME.stopAnimation = true;
+    if (DEBUG.GOD) return;
+    /* ENGINE.GAME.stopAnimation = true;
     GAME.timeRemains = GAME.timeLeft;
     HERO.dead = true;
     HERO.canShoot = false;
@@ -435,7 +443,7 @@ const HERO = {
       GAME.end();
     } else {
       setTimeout(GAME.levelContinue, INI.DEATH_TIMEOUT);
-    }
+    } */
   },
   paintDeath() {
     ENGINE.clearLayer("hero");
