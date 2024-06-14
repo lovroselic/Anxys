@@ -91,10 +91,16 @@ const TreasureList = ["GoldCoin", "GoldBar", "Ring", "crownPink", "Crown"];
 
 const EnemyList = {
   Snake: {
-    speed: 4,
+    speed: 2,
     foreSight: 4,
     probability: 40,
     score: 10
+  },
+  Ghost: {
+    speed: 3,
+    foreSight: 2,
+    probability: 90,
+    score: 50
   },
   Skeleton: {
     speed: 4,
@@ -108,12 +114,7 @@ const EnemyList = {
     probability: 80,
     score: 25
   },
-  Ghost: {
-    speed: 6,
-    foreSight: 2,
-    probability: 90,
-    score: 50
-  },
+
   Ghoul: {
     speed: 6,
     foreSight: 1,

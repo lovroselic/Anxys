@@ -193,36 +193,23 @@ const GRID = {
     }
   },
   translateMove(entity, lapsedTime, gridArray, changeView = false, onFinish = null, animate = true) {
-    if (!gridArray) {
-      gridArray = entity.moveState.gridArray;
-    }
-
+    if (!gridArray) gridArray = entity.moveState.gridArray;
     entity.actor.x += entity.moveState.dir.x * entity.speed;
     entity.actor.y += entity.moveState.dir.y * entity.speed;
-
     entity.actor.orientation = entity.actor.getOrientation(entity.moveState.dir);
-    if (animate) {
-      entity.actor.updateAnimation(lapsedTime, entity.actor.orientation);
-    }
+    if (animate) entity.actor.updateAnimation(lapsedTime, entity.actor.orientation);
     entity.moveState.homeGrid = GRID.coordToGrid(entity.actor.x, entity.actor.y);
     entity.moveState.pos = entity.moveState.homeGrid;
-
     if (gridArray.outside(entity.moveState.homeGrid)) {
       entity.moveState.homeGrid = gridArray.toOtherSide(entity.moveState.homeGrid);
       GRID.gridToSprite(entity.moveState.homeGrid, entity.actor);
     }
-
-    if (changeView) {
-      ENGINE.VIEWPORT.check(entity.actor);
-    }
-
+    if (changeView) ENGINE.VIEWPORT.check(entity.actor);
     ENGINE.VIEWPORT.alignTo(entity.actor);
-
     if (GRID.same(entity.moveState.endGrid, GRID.trueToGrid(entity.actor))) {
       entity.moveState.moving = false;
       entity.moveState.startGrid = entity.moveState.endGrid;
       entity.moveState.homeGrid = entity.moveState.endGrid;
-
       if (onFinish) onFinish.call();
     }
     return;

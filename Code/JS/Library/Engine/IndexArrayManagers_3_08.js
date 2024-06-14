@@ -271,7 +271,7 @@ class Enemy_TG extends IAM {
         }
         for (const enemy of this.POOL) {
             if (enemy === null) continue;
-            enemy.manage(lapsedTime, map[this.IA], map);
+            enemy.manage(lapsedTime, map[this.IA], map, reference);
         }
     }
 }

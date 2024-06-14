@@ -26,7 +26,7 @@ knownBugs:
 /////////////////////////////////////////
 
 const AI = {
-  VERSION: "2.02",
+  VERSION: "2.03",
   CSS: "color: silver",
   VERBOSE: false,
   INI: {
@@ -43,6 +43,7 @@ const AI = {
     switch (this.setting) {
       case "2D": return Grid.toClass(enemy.moveState.pos);
       case "3D": return Vector3.toGrid(enemy.moveState.pos);
+      default: return enemy.moveState.pos;
     }
   },
   getGridValue(enemy) {

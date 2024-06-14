@@ -41,7 +41,7 @@ const INI = {
 };
 
 const PRG = {
-  VERSION: "1.03.06",
+  VERSION: "1.03.07",
   NAME: "Anxys",
   YEAR: "2018",
   CSS: "color: #239AFF;",
@@ -566,29 +566,47 @@ class Enemy {
     this.actor.orientation = this.actor.getOrientation(this.dir);
     this.actor.animateMove(this.actor.orientation);
     ENGINE.VIEWPORT.alignTo(this.actor);
-    console.log(this.foreSight, this.foreSight + 1, typeof (this.foreSight));
     this.behaviour = new Behaviour(this.foreSight + 1, ["wanderer"], this.foreSight, ["advancer"]);
     this.distance = null;
     this.dirStack = [];
   }
-  manage(lapsedTime, IA, map) {
+  manage(lapsedTime, IA, map, hero) {
 
     this.setDistanceFromNodeMap(map.GA.nodeMap);
 
-    console.info("Manage", this.id, this.distance);
+    console.info("Manage", this.name, this.id, this.distance);
     //trim those out of sight
     //move if it moves
     //enemy translate position
+    if (this.moveState.moving) {
+      console.warn(".moving", this.id, this.distance)
+      GRID.translateMove(this, lapsedTime);
+      return;
+    }
+    //collission to HERO will be job of HERO
 
 
     //set behaviour
     this.behaviour.manage(this, this.distance, false);
-    console.log(".strategy", this.behaviour.strategy);
     //set next move
-
-    
+    console.info(`${this.name} ${this.id} strategy`, this.behaviour.strategy);
+    const ARG = {
+      playerPosition: hero.moveState.homeGrid,
+      currentPlayerDir: hero.moveState.dir,
+      exactPlayerPosition: hero.moveState.homeGrid,
+    };
+    this.dirStack = AI[this.behaviour.strategy](this, ARG);
+    console.info(`${this.name} ${this.id} dirStack`, this.dirStack, "dir", this.moveState.dir);
+    this.makeMove();
+  }
+  makeMove() {
+    this.moveState.next(this.dirStack.shift());
   }
   setDistanceFromNodeMap(nodemap) {
+    if (!nodemap[this.moveState.homeGrid.x][this.moveState.homeGrid.y]) {
+      ENEMY_TG.remove(this.id);
+      return;
+    }
     this.distance = nodemap[this.moveState.homeGrid.x][this.moveState.homeGrid.y].distance;
   }
   draw() {
