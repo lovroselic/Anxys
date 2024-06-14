@@ -41,7 +41,7 @@ const INI = {
 };
 
 const PRG = {
-  VERSION: "1.03.07",
+  VERSION: "1.03.08",
   NAME: "Anxys",
   YEAR: "2018",
   CSS: "color: #239AFF;",
@@ -305,13 +305,16 @@ const HERO = {
   useLamp() {
     if (!DEBUG.INF_LAMPS) HERO.lamp = false;
     TITLE.lamp();
-    ENEMY.killAll();
+    ENEMY_TG.clearAll();
   },
   manage(lapsedTime) {
     HERO.move(lapsedTime);
     HERO.checkItemColission();
-
+    HERO.checkEnemyCollision();
   },
+  checkEnemyCollision() {
+    
+   },
   checkItemColission() {
     if (HERO.moveState.moving) return;
     if (!HERO.moved) return;
@@ -570,33 +573,38 @@ class Enemy {
     this.distance = null;
     this.dirStack = [];
   }
+  outOfSight() {
+    const minX = Math.floor(ENGINE.VIEWPORT.vx / ENGINE.INI.GRIDPIX) - INI.ENEMY_VISIBILITY_TOLERANCE;
+    const maxX = minX + ENGINE.gameWIDTH / ENGINE.INI.GRIDPIX - 1 + INI.ENEMY_VISIBILITY_TOLERANCE;
+    if (this.moveState.homeGrid.x <= minX || this.moveState.homeGrid.x >= maxX) return true;
+    return false;
+  }
   manage(lapsedTime, IA, map, hero) {
-
     this.setDistanceFromNodeMap(map.GA.nodeMap);
 
-    console.info("Manage", this.name, this.id, this.distance);
     //trim those out of sight
-    //move if it moves
+    const OoutOfSight = this.outOfSight();
+    if (OoutOfSight) {
+      ENEMY_TG.remove(this.id);
+      return;
+    }
+
     //enemy translate position
     if (this.moveState.moving) {
-      console.warn(".moving", this.id, this.distance)
       GRID.translateMove(this, lapsedTime);
       return;
     }
     //collission to HERO will be job of HERO
 
-
     //set behaviour
     this.behaviour.manage(this, this.distance, false);
     //set next move
-    console.info(`${this.name} ${this.id} strategy`, this.behaviour.strategy);
     const ARG = {
       playerPosition: hero.moveState.homeGrid,
       currentPlayerDir: hero.moveState.dir,
       exactPlayerPosition: hero.moveState.homeGrid,
     };
     this.dirStack = AI[this.behaviour.strategy](this, ARG);
-    console.info(`${this.name} ${this.id} dirStack`, this.dirStack, "dir", this.moveState.dir);
     this.makeMove();
   }
   makeMove() {
