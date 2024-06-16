@@ -111,7 +111,7 @@ class IAM {
     }
     find(property, value) {
         for (let obj of this.POOL) {
-            if (obj[property] === value) return obj.id;
+            if (obj?.[property] === value) return obj.id;
         }
         return null;
     }
@@ -268,7 +268,7 @@ class Ballistic_TG extends IAM {
     }
     manage(lapsedTime) {
         for (const obj of this.POOL) {
-            obj.manage(lapsedTime);
+            if (obj) obj.manage(lapsedTime);
         }
     }
 }

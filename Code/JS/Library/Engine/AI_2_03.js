@@ -34,6 +34,12 @@ const AI = {
   },
   referenceEntity: null,
   immobileWander: true,
+  changeAdvancerToHuntDistance(distance) {
+    AI.INI.CHANGE_ADVANCER_TO_HUNT_MIN_DISTANCE = distance;
+  },
+  changeAdvancerToHuntImmediatelly() {
+    this.changeAdvancerToHuntDistance(Infinity);
+  },
   initialize(ref, setting = "2D") {
     this.referenceEntity = ref;
     if (setting !== "3D" && setting !== "2D") setting = "2D";
@@ -98,13 +104,13 @@ const AI = {
     [goal, _] = enemy.parent.map.GA.findNextCrossroad(playerPosition, dir, enemy.fly);
     if (this.VERBOSE) console.log(`.. ${enemy.name}-${enemy.id} goal`, goal, "strategy", enemy.behaviour.strategy);
 
-    if (goal === null) {
+    if (goal === null || enemy.parent.map.GA.isOutOfBounds(goal)) {
       return this.hunt(enemy, exactPosition);
     }
 
     /** what if goal takes you further away - advancer! */
     const new_distance = enemy.parent.map.GA.nodeMap[goal.x][goal.y].distance;
-    if (this.VERBOSE) console.log(`.. ${enemy.name}-${enemy.id} new_distance  from goal`, new_distance, "current distance", enemy.distance);
+    if (this.VERBOSE) console.warn(`.. ${enemy.name}-${enemy.id} new_distance  from goal`, new_distance, "current distance", enemy.distance);
     if (enemy.distance < this.INI.CHANGE_ADVANCER_TO_HUNT_MIN_DISTANCE && new_distance > enemy.distance) {
       if (this.VERBOSE) console.warn("... overriding behavior -> hunt");
       return this.hunt(enemy, exactPosition);
@@ -237,8 +243,6 @@ const AI = {
   },
   shadower(enemy, ARG) {
     let gridValue = this.getGridValue(enemy);
-
-    //let directions = enemy.parent.map.GA.getDirectionsIfNot(this.getPosition(enemy), MAPDICT.WALL, enemy.moveState.dir.mirror());
     const directions = enemy.parent.map.GA.getDirectionsIfNot(this.getPosition(enemy), gridValue, enemy.moveState.dir.mirror());
     if (directions.length === 1) return [directions[0]];
     if (enemy.moveState.goingAway(ARG.MS) || enemy.moveState.towards(ARG.MS, enemy.tolerance)) {

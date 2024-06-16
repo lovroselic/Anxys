@@ -24,8 +24,8 @@ const INI = {
   bottomHeight: 40,
   HERO_SPEED: 6,
   MINI_PIX: 5,
-  LASER_SPEED_MIN: 16,
-  LASER_SPEED_MAX: 32,
+  LASER_SPEED_MIN: 500,
+  LASER_SPEED_MAX: 1000,
   LASER_GRID_LENGTH: 5,
   LASER_LENGTH: this.LASER_GRID_LENGTH * ENGINE.INI.GRIDPIX,
   LASER_START: 12,
@@ -42,7 +42,7 @@ const INI = {
 };
 
 const PRG = {
-  VERSION: "1.03.10",
+  VERSION: "1.03.11",
   NAME: "Anxys",
   YEAR: "2018",
   CSS: "color: #239AFF;",
@@ -491,21 +491,15 @@ const HERO = {
   },
   shoot(dir) {
     if (!HERO.canShoot) return;
+    const laserExists = BALLISTIC_TG.find("dirIndex", dir.toInt());
+    if (laserExists) {
+      console.warn("alreadi exists", dir);
+      return;
+    }
 
-    //check if exist first
-
-    //var y = HERO.actor.y;
     const x = HERO.actor.x + ENGINE.INI.GRIDPIX / 4 * dir.x;
-    const laser = new Laser(new Point(x, HERO.actor.y), dir);
+    const laser = new Laser(new Point(x, HERO.actor.y), dir, this.moveState.homeGrid);
     BALLISTIC_TG.add(laser);
-    console.info("BALLISTIC_TG", BALLISTIC_TG);
-
-    /* var check = LASER.check(dir.x);
-    if (check) return;
-    var y = HERO.actor.y;
-    var x = HERO.actor.x + ENGINE.INI.GRIDPIX / 4 * dir.x;
-    LASER.pool.push(new Laser(new Point(x, y), dir.x, HERO.homeGrid)); */
-
   },
   die() {
     if (HERO.dead) return;
@@ -544,83 +538,59 @@ const HERO = {
   }
 };
 
-
 class Laser {
-  constructor(point, dir) {
+  constructor(point, dir, grid) {
     this.point = point;
     this.dir = dir.x;                 //one dimensional (x) direction!
     this.dirIndex = dir.toInt();
-  }
-}
-
-/* class Laser {
-  constructor(origin, direction, homeGrid) {
-    this.origin = origin;
-    this.direction = direction;
-    this.homeGrid = homeGrid;
     this.speed = INI.LASER_SPEED_MAX;
-    this.end = new Point(origin.x + INI.LASER_START * direction, origin.y);
-    this.finalX = this.checkFinal();
+    this.end = new Point(this.point.x + INI.LASER_START * this.dir, this.point.y);
     this.done = false;
+    this.originGrid = grid;
+    this.finalX = null;
+  }
+  draw() {
+    console.warn("laser draw", this);
+    ENGINE.layersToClear.add("laser");
+    const CTX = LAYER.laser;
+    CTX.beginPath();
+    CTX.moveTo(this.point.x - ENGINE.VIEWPORT.vx, this.point.y - ENGINE.VIEWPORT.vy);
+    CTX.lineTo(this.end.x - ENGINE.VIEWPORT.vx, this.end.y - ENGINE.VIEWPORT.vy);
+    CTX.closePath();
+    CTX.stroke();
+  }
+  manage(lapsedTime) {
+    if (!this.finalX) this.finalX = this.checkFinal();
+    if (this.done) BALLISTIC_TG.remove(this.id);
+    const deltaTime = lapsedTime / 1000;
+    this.point.x += this.dir * INI.LASER_SPEED_MIN * deltaTime;
+    this.end.x += this.dir * INI.LASER_SPEED_MAX * deltaTime;
+
+    const finalXConditions = {
+      '-1': () => this.end.x < this.finalX,
+      '1': () => this.end.x > this.finalX
+    };
+
+    if (finalXConditions[this.dir]()) {
+      this.end.x = this.finalX;
+      this.done = true;
+    }
   }
   checkFinal() {
-    var gridX;
-    var obstacle = false;
+    const GA = this.parent.map.GA;
+    let gridX = this.originGrid.x;
     for (let q = 1; q <= INI.LASER_GRID_LENGTH; q++) {
-      gridX = q * this.direction + this.homeGrid.x;
-      if (
-        GRID.isBlock(gridX, this.homeGrid.y) ||
-        GRID.isDoor(gridX, this.homeGrid.y)
-      ) {
-        if (this.direction === -1) gridX++;
-        obstacle = true;
-        break;
-      }
-      if (gridX < 0 || gridX > MAP[GAME.level].width - 1) break;
+      let nextX = q * this.dir + this.originGrid.x;
+      const nextGrid = new Grid(nextX, this.originGrid.y);
+      if (GA.isWall(nextGrid) || GA.isOutOfBounds(nextGrid)) break;
+      gridX = nextX;
     }
-    if (this.direction === 1 && !obstacle) gridX++;
-    if (gridX < 0) gridX = 0;
-    if (gridX > MAP[GAME.level].width) gridX = MAP[GAME.level].width;
-    var piX = gridX * ENGINE.INI.GRIDPIX;
+    if (this.dir === 1) gridX++;
+    let piX = gridX * ENGINE.INI.GRIDPIX;
     if (this.direction === 1) piX--;
     return piX;
   }
-  draw(ctx) {
-    ctx.beginPath();
-    ctx.moveTo(
-      this.origin.x - ENGINE.VIEWPORT.vx,
-      this.origin.y - ENGINE.VIEWPORT.vy
-    );
-    ctx.lineTo(
-      this.end.x - ENGINE.VIEWPORT.vx,
-      this.end.y - ENGINE.VIEWPORT.vy
-    );
-    ctx.closePath();
-    ctx.stroke();
-  }
-  evolve() {
-    this.origin.x += this.direction * INI.LASER_SPEED_MIN;
-    this.end.x += this.direction * INI.LASER_SPEED_MAX;
-    switch (this.direction) {
-      case -1:
-        if (this.end.x < this.finalX) {
-          this.end.x = this.finalX;
-          this.done = true;
-        }
-        break;
-      case 1:
-        if (this.end.x > this.finalX) {
-          this.end.x = this.finalX;
-          this.done = true;
-        }
-        break;
-      default:
-        console.log(this, "evolve direction ERROR");
-    }
-  }
-} */
-
-
+}
 
 const GAME = {
   start() {
@@ -634,6 +604,7 @@ const GAME = {
     $(ENGINE.topCanvas).css("cursor", "");
     ENGINE.hideMouse();
     AI.VERBOSE = true;
+    AI.changeAdvancerToHuntImmediatelly();
 
     $("#pause").prop("disabled", false);
     $("#pause").off();
@@ -647,6 +618,7 @@ const GAME = {
     GAME.score = 0;
     GAME.lives = 4;                                       //DEFAULT
 
+    LAYER.laser.strokeStyle = "#F00";
     HERO.startInit();
     GAME.levelStart(GAME.level);
   },
@@ -679,9 +651,9 @@ const GAME = {
     GAME.firstFrameDraw(level);
     GAME.timer = new CountDown("gameTime", DEFINE[GAME.level].time, GAME.timeIsUp);
     //debug
-    //HERO.goto(new Grid(22, 9)); //exit
-    HERO.goto(new Grid(11, 1)); //key
-    //HERO.hasKey = true; //DEBUG
+    HERO.goto(new Grid(22, 9)); //exit
+    //HERO.goto(new Grid(11, 1)); //key
+    HERO.hasKey = true; //DEBUG
     //
     NEST.start();
     GAME.resume();
@@ -768,24 +740,6 @@ const GAME = {
 
     console.timeEnd("init");
     console.log("MAP", MAP[level]);
-    /* 
-        for (let z = 0; z <= MAP[level].nest.length - 1; z++) {
-          MAP[level].nest[z] = Nest.toClass(MAP[level].nest[z]);
-        }
-        for (let z = 0; z <= MAP[level].warp.length - 1; z++) {
-          MAP[level].warp[z] = Warp.toClass(MAP[level].warp[z]);
-        }
-    
-        for (let z = 0; z <= MAP[level].door.length - 1; z++) {
-          MAP[level].door[z] = Gate.toClass(MAP[level].door[z]);
-        }
-        for (let z = 0; z <= MAP[level].key.length - 1; z++) {
-          MAP[level].key[z] = Key.toClass(MAP[level].key[z]);
-        }
-        Treasure.reset();
-        for (let z = 0; z <= MAP[level].treasure.length - 1; z++) {
-          MAP[level].treasure[z] = Treasure.toClass(MAP[level].treasure[z]);
-        } */
   },
   updateVieport() {
     if (!ENGINE.VIEWPORT.changed) return;
@@ -846,18 +800,13 @@ const GAME = {
     }
   },
   run(lapsedTime) {
-    //GAME.run() template
     if (ENGINE.GAME.stopAnimation) return;
 
     HERO.manage(lapsedTime);
-    //BUMP2D.manage(lapsedTime);            // this is done when event requires it
-    //NEST.manage();
-    // ENEMY.move();
-    //ENEMY.collideLaser();
-    //ENEMY.collideHero();
     VANISHING.manage(lapsedTime);
     CHANGING_ANIMATION.manage(lapsedTime);
     ENEMY_TG.manage(lapsedTime, HERO);
+    BALLISTIC_TG.manage(lapsedTime);
     GAME.respond();
     ENGINE.TIMERS.update();
     GAME.frameDraw(lapsedTime);
@@ -866,6 +815,7 @@ const GAME = {
     ENGINE.clearLayerStack();
     GAME.updateVieport();
     ENEMY_TG.draw();
+    BALLISTIC_TG.draw();
     HERO.draw();
     VANISHING.draw();
     CHANGING_ANIMATION.draw();
