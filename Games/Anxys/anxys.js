@@ -42,7 +42,7 @@ const INI = {
 };
 
 const PRG = {
-  VERSION: "1.03.08",
+  VERSION: "1.03.09",
   NAME: "Anxys",
   YEAR: "2018",
   CSS: "color: #239AFF;",
@@ -293,6 +293,76 @@ class Treasure extends FloorItem {
   }
 }
 
+class Enemy {
+  constructor(grid, dir, type, name) {
+    this.grid = grid;
+    this.dir = dir;
+    for (let prop in type) {
+      this[prop] = type[prop];
+    }
+    this.name = name; //also sprite, asset name
+    this.asset = ASSET[name];
+    this.spriteClass = name;
+    this.actor = new ACTOR(this.spriteClass, 0, 0, "front", this.asset);
+    this.moveState = new MoveState(grid, this.dir, MAP[GAME.level].map.GA);
+    GRID.gridToSprite(grid, this.actor);
+    this.actor.orientation = this.actor.getOrientation(this.dir);
+    this.actor.animateMove(this.actor.orientation);
+    ENGINE.VIEWPORT.alignTo(this.actor);
+    this.behaviour = new Behaviour(this.foreSight + 1, ["wanderer"], this.foreSight, ["advancer"]);
+    this.distance = null;
+    this.dirStack = [];
+  }
+  outOfSight() {
+    const minX = Math.floor(ENGINE.VIEWPORT.vx / ENGINE.INI.GRIDPIX) - INI.ENEMY_VISIBILITY_TOLERANCE;
+    const maxX = minX + ENGINE.gameWIDTH / ENGINE.INI.GRIDPIX - 1 + INI.ENEMY_VISIBILITY_TOLERANCE;
+    if (this.moveState.homeGrid.x <= minX || this.moveState.homeGrid.x >= maxX) return true;
+    return false;
+  }
+  manage(lapsedTime, IA, map, hero) {
+    this.setDistanceFromNodeMap(map.GA.nodeMap);
+
+    //trim those out of sight
+    const OoutOfSight = this.outOfSight();
+    if (OoutOfSight) {
+      ENEMY_TG.remove(this.id);
+      return;
+    }
+
+    //enemy translate position
+    if (this.moveState.moving) {
+      GRID.translateMove(this, lapsedTime);
+      return;
+    }
+    //collission to HERO will be job of HERO
+
+    //set behaviour
+    this.behaviour.manage(this, this.distance, false);
+    //set next move
+    const ARG = {
+      playerPosition: hero.moveState.homeGrid,
+      currentPlayerDir: hero.moveState.dir,
+      exactPlayerPosition: hero.moveState.homeGrid,
+    };
+    this.dirStack = AI[this.behaviour.strategy](this, ARG);
+    this.makeMove();
+  }
+  makeMove() {
+    this.moveState.next(this.dirStack.shift());
+  }
+  setDistanceFromNodeMap(nodemap) {
+    if (!nodemap[this.moveState.homeGrid.x][this.moveState.homeGrid.y]) {
+      ENEMY_TG.remove(this.id);
+      return;
+    }
+    this.distance = nodemap[this.moveState.homeGrid.x][this.moveState.homeGrid.y].distance;
+  }
+  draw() {
+    ENGINE.layersToClear.add("enemy");
+    ENGINE.spriteDraw('enemy', this.actor.vx, this.actor.vy, this.actor.sprite());
+  }
+}
+
 /** */
 
 const HERO = {
@@ -421,11 +491,13 @@ const HERO = {
   },
   shoot(dir) {
     if (!HERO.canShoot) return;
-    var check = LASER.check(dir.x);
+
+    /* var check = LASER.check(dir.x);
     if (check) return;
     var y = HERO.actor.y;
     var x = HERO.actor.x + ENGINE.INI.GRIDPIX / 4 * dir.x;
-    LASER.pool.push(new Laser(new Point(x, y), dir.x, HERO.homeGrid));
+    LASER.pool.push(new Laser(new Point(x, y), dir.x, HERO.homeGrid)); */
+
   },
   die() {
     if (HERO.dead) return;
@@ -464,37 +536,12 @@ const HERO = {
   }
 };
 
-const LASER = {
-  pool: [],
-  check(dir) {
-    var LPL = LASER.pool.length;
-    var check = false;
-    for (let q = 0; q < LPL; q++) {
-      if (LASER.pool[q].direction === dir) {
-        check = true;
-        break;
-      }
-    }
-    return check;
-  },
-  draw() {
-    var LPL = LASER.pool.length;
-    if (LPL === 0) return;
-    ENGINE.layersToClear.add("laser");
-    var CTX = LAYER.laser;
-    CTX.strokeStyle = "#F00";
-    for (let q = LPL - 1; q >= 0; q--) {
-      LASER.pool[q].draw(CTX);
-      if (LASER.pool[q].done) {
-        LASER.pool.splice(q, 1);
-        break;
-      }
-      LASER.pool[q].evolve();
-    }
-  }
-};
 
 class Laser {
+  constructor(){}
+}
+
+/* class Laser {
   constructor(origin, direction, homeGrid) {
     this.origin = origin;
     this.direction = direction;
@@ -559,77 +606,9 @@ class Laser {
         console.log(this, "evolve direction ERROR");
     }
   }
-}
+} */
 
-class Enemy {
-  constructor(grid, dir, type, name) {
-    this.grid = grid;
-    this.dir = dir;
-    for (let prop in type) {
-      this[prop] = type[prop];
-    }
-    this.name = name; //also sprite, asset name
-    this.asset = ASSET[name];
-    this.spriteClass = name;
-    this.actor = new ACTOR(this.spriteClass, 0, 0, "front", this.asset);
-    this.moveState = new MoveState(grid, this.dir, MAP[GAME.level].map.GA);
-    GRID.gridToSprite(grid, this.actor);
-    this.actor.orientation = this.actor.getOrientation(this.dir);
-    this.actor.animateMove(this.actor.orientation);
-    ENGINE.VIEWPORT.alignTo(this.actor);
-    this.behaviour = new Behaviour(this.foreSight + 1, ["wanderer"], this.foreSight, ["advancer"]);
-    this.distance = null;
-    this.dirStack = [];
-  }
-  outOfSight() {
-    const minX = Math.floor(ENGINE.VIEWPORT.vx / ENGINE.INI.GRIDPIX) - INI.ENEMY_VISIBILITY_TOLERANCE;
-    const maxX = minX + ENGINE.gameWIDTH / ENGINE.INI.GRIDPIX - 1 + INI.ENEMY_VISIBILITY_TOLERANCE;
-    if (this.moveState.homeGrid.x <= minX || this.moveState.homeGrid.x >= maxX) return true;
-    return false;
-  }
-  manage(lapsedTime, IA, map, hero) {
-    this.setDistanceFromNodeMap(map.GA.nodeMap);
 
-    //trim those out of sight
-    const OoutOfSight = this.outOfSight();
-    if (OoutOfSight) {
-      ENEMY_TG.remove(this.id);
-      return;
-    }
-
-    //enemy translate position
-    if (this.moveState.moving) {
-      GRID.translateMove(this, lapsedTime);
-      return;
-    }
-    //collission to HERO will be job of HERO
-
-    //set behaviour
-    this.behaviour.manage(this, this.distance, false);
-    //set next move
-    const ARG = {
-      playerPosition: hero.moveState.homeGrid,
-      currentPlayerDir: hero.moveState.dir,
-      exactPlayerPosition: hero.moveState.homeGrid,
-    };
-    this.dirStack = AI[this.behaviour.strategy](this, ARG);
-    this.makeMove();
-  }
-  makeMove() {
-    this.moveState.next(this.dirStack.shift());
-  }
-  setDistanceFromNodeMap(nodemap) {
-    if (!nodemap[this.moveState.homeGrid.x][this.moveState.homeGrid.y]) {
-      ENEMY_TG.remove(this.id);
-      return;
-    }
-    this.distance = nodemap[this.moveState.homeGrid.x][this.moveState.homeGrid.y].distance;
-  }
-  draw() {
-    ENGINE.layersToClear.add("enemy");
-    ENGINE.spriteDraw('enemy', this.actor.vx, this.actor.vy, this.actor.sprite());
-  }
-}
 
 const GAME = {
   start() {
@@ -766,6 +745,7 @@ const GAME = {
     BUMP2D.refresh();
     FLOOR_OBJECT.refresh();
     ENEMY_TG.init(MAP[level].map);
+    BALLISTIC_TG.init(MAP[level].map);
 
     //drawing of statics
     BUMP2D.draw();

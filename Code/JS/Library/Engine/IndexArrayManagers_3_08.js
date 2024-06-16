@@ -249,6 +249,24 @@ class Pixel_Actors extends IAM {
 }
 
 /** Texture grid IA Managers */
+
+class Ballistic_TG extends IAM {
+    constructor(enemyIA, entity_IAM) {
+        super();
+        this.reIndexRequired = true;
+        this.enemyIA = enemyIA;
+        this.entity_IAM = entity_IAM;
+    }
+    poolToIA(IA) {
+        return;
+    }
+    manage(lapsedTime) {
+        for (const obj of this.POOL) {
+            obj.manage(lapsedTime);
+        }
+    }
+}
+
 class Enemy_TG extends IAM {
     constructor() {
         super();
@@ -1084,6 +1102,7 @@ const DECOR = new Decor();
 const PROFILE_BALLISTIC = new Profile_Ballistic();
 const PROFILE_ACTORS = new Profile_Actors();
 const PIXEL_ACTORS = new Pixel_Actors();
+const BALLISTIC_TG = new Ballistic_TG("enemy_tg_IA", ENEMY_TG);
 const ENEMY_TG = new Enemy_TG();
 const ENEMY_RC = new Enemy_RC();
 const VANISHING = new Vanishing();
