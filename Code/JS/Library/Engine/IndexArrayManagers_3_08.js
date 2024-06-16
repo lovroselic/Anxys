@@ -109,6 +109,12 @@ class IAM {
         this.setReindex();
         this.manage();
     }
+    find(property, value) {
+        for (let obj of this.POOL) {
+            if (obj[property] === value) return obj.id;
+        }
+        return null;
+    }
 }
 
 /** Profile IA Managers */
@@ -1102,8 +1108,8 @@ const DECOR = new Decor();
 const PROFILE_BALLISTIC = new Profile_Ballistic();
 const PROFILE_ACTORS = new Profile_Actors();
 const PIXEL_ACTORS = new Pixel_Actors();
-const BALLISTIC_TG = new Ballistic_TG("enemy_tg_IA", ENEMY_TG);
 const ENEMY_TG = new Enemy_TG();
+const BALLISTIC_TG = new Ballistic_TG("enemy_tg_IA", ENEMY_TG);
 const ENEMY_RC = new Enemy_RC();
 const VANISHING = new Vanishing();
 const FLOOR_OBJECT = new Floor_Object();

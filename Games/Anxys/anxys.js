@@ -42,7 +42,7 @@ const INI = {
 };
 
 const PRG = {
-  VERSION: "1.03.09",
+  VERSION: "1.03.10",
   NAME: "Anxys",
   YEAR: "2018",
   CSS: "color: #239AFF;",
@@ -492,6 +492,14 @@ const HERO = {
   shoot(dir) {
     if (!HERO.canShoot) return;
 
+    //check if exist first
+
+    //var y = HERO.actor.y;
+    const x = HERO.actor.x + ENGINE.INI.GRIDPIX / 4 * dir.x;
+    const laser = new Laser(new Point(x, HERO.actor.y), dir);
+    BALLISTIC_TG.add(laser);
+    console.info("BALLISTIC_TG", BALLISTIC_TG);
+
     /* var check = LASER.check(dir.x);
     if (check) return;
     var y = HERO.actor.y;
@@ -538,7 +546,11 @@ const HERO = {
 
 
 class Laser {
-  constructor(){}
+  constructor(point, dir) {
+    this.point = point;
+    this.dir = dir.x;                 //one dimensional (x) direction!
+    this.dirIndex = dir.toInt();
+  }
 }
 
 /* class Laser {
