@@ -268,7 +268,10 @@ class Ballistic_TG extends IAM {
     }
     manage(lapsedTime) {
         for (const obj of this.POOL) {
-            if (obj) obj.manage(lapsedTime);
+            if (obj) {
+                obj.manage(lapsedTime);
+                obj.collision();
+            }
         }
     }
 }

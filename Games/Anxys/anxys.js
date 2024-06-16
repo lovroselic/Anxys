@@ -42,7 +42,7 @@ const INI = {
 };
 
 const PRG = {
-  VERSION: "1.03.11",
+  VERSION: "1.03.12",
   NAME: "Anxys",
   YEAR: "2018",
   CSS: "color: #239AFF;",
@@ -361,6 +361,9 @@ class Enemy {
     ENGINE.layersToClear.add("enemy");
     ENGINE.spriteDraw('enemy', this.actor.vx, this.actor.vy, this.actor.sprite());
   }
+  die() {
+    console.warn(this.name, "-", this.id, "dies");
+  }
 }
 
 /** */
@@ -492,10 +495,7 @@ const HERO = {
   shoot(dir) {
     if (!HERO.canShoot) return;
     const laserExists = BALLISTIC_TG.find("dirIndex", dir.toInt());
-    if (laserExists) {
-      console.warn("alreadi exists", dir);
-      return;
-    }
+    if (laserExists) return;
 
     const x = HERO.actor.x + ENGINE.INI.GRIDPIX / 4 * dir.x;
     const laser = new Laser(new Point(x, HERO.actor.y), dir, this.moveState.homeGrid);
@@ -549,8 +549,41 @@ class Laser {
     this.originGrid = grid;
     this.finalX = null;
   }
+  setArea() {
+    let x;
+    if (this.dir === 1) {
+      x = this.point.x;
+    } else x = this.end.x;
+    this.area = new Area(x, this.point.y, Math.abs(this.point.x - this.end.x), 1);
+  }
+  collision() {
+    let grids = this.getGrids();
+    console.warn("laser collision, grids", grids);
+    const IA = this.parent.map[this.parent.enemyIA];
+    const ids = IA.unrollArray(grids);
+    if (ids.size) {
+      console.log("ids", ids);
+      for (let id of ids) {
+        const enemy = ENEMY_TG.show(id);
+        console.log("id", id, enemy);
+        let hit = ENGINE.collisionRectangles(this, enemy.actor);
+        if (hit) {
+          console.error("hit", enemy);
+          enemy.die();
+        }
+      }
+    }
+  }
+  getGrids() {
+    const origin = GRID.pointToGrid(this.point);
+    const end = GRID.pointToGrid(this.end);
+    const grids = [end];
+    for (let i = origin.x; i != end.x; i += this.dir) {
+      grids.push(new Grid(i, origin.y));
+    }
+    return grids;
+  }
   draw() {
-    console.warn("laser draw", this);
     ENGINE.layersToClear.add("laser");
     const CTX = LAYER.laser;
     CTX.beginPath();
@@ -603,7 +636,7 @@ const GAME = {
     $(ENGINE.topCanvas).off("click", ENGINE.mouseClick);
     $(ENGINE.topCanvas).css("cursor", "");
     ENGINE.hideMouse();
-    AI.VERBOSE = true;
+    //AI.VERBOSE = true;
     AI.changeAdvancerToHuntImmediatelly();
 
     $("#pause").prop("disabled", false);
