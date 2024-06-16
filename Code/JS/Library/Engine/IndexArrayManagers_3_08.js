@@ -115,6 +115,11 @@ class IAM {
         }
         return null;
     }
+    performOnPool(func) {
+        for (let obj of this.POOL) {
+            if (obj) obj[func]();
+        }
+    }
 }
 
 /** Profile IA Managers */
@@ -455,12 +460,13 @@ class Destruction_Animation extends IAM {
         }
         for (const anim of this.POOL) {
             if (!anim) continue;
+            if (anim.movable) anim.move();
             anim.actor.updateAnimation(lapsedTime);
             if (anim.actor.animationThrough) {
                 this.remove(anim.id);
             }
             if (!anim) continue;
-            if (anim.movable) anim.move();
+            
         }
     }
 }

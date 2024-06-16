@@ -12,7 +12,7 @@
 const DEBUG = {
   FRAME: 0,
   INF_LIVES: false,
-  INF_LAMPS: false,
+  INF_LAMPS: true,
   FPS: true,
   GRID: true,
   COORD: true,
@@ -42,7 +42,7 @@ const INI = {
 };
 
 const PRG = {
-  VERSION: "1.03.12",
+  VERSION: "1.03.13",
   NAME: "Anxys",
   YEAR: "2018",
   CSS: "color: #239AFF;",
@@ -113,6 +113,24 @@ const PRG = {
 };
 
 /** classes */
+
+class GeneralDestruction {
+  constructor(point, assetstring) {
+    this.point = point;
+    this.layer = 'explosion';
+    this.movable = true;
+    this.actor = new ACTOR(assetstring, point.x, point.y, "linear", ASSET[assetstring]);
+    ENGINE.VIEWPORT.alignTo(this.actor);
+
+  }
+  draw() {
+    ENGINE.spriteDraw(this.layer, this.actor.vx, this.actor.vy, this.actor.sprite());
+    ENGINE.layersToClear.add("explosion");
+  }
+  move() {
+    ENGINE.VIEWPORT.alignTo(this.actor);
+  }
+}
 
 class Destination {
   constructor(waypoint, origin) {
@@ -362,7 +380,91 @@ class Enemy {
     ENGINE.spriteDraw('enemy', this.actor.vx, this.actor.vy, this.actor.sprite());
   }
   die() {
-    console.warn(this.name, "-", this.id, "dies");
+    DESTRUCTION_ANIMATION.add(new GeneralDestruction(new Point(this.actor.x, this.actor.y), "AlienExp"));
+    GAME.addScore(this.score);
+    ENEMY_TG.remove(this.id);
+  }
+}
+
+class Laser {
+  constructor(point, dir, grid) {
+    this.point = point;
+    this.dir = dir.x;                 //one dimensional (x) direction!
+    this.dirIndex = dir.toInt();
+    this.speed = INI.LASER_SPEED_MAX;
+    this.end = new Point(this.point.x + INI.LASER_START * this.dir, this.point.y);
+    this.done = false;
+    this.originGrid = grid;
+    this.finalX = null;
+  }
+  setArea() {
+    let x;
+    if (this.dir === 1) {
+      x = this.point.x;
+    } else x = this.end.x;
+    this.area = new Area(x, this.point.y, Math.abs(this.point.x - this.end.x), 1);
+  }
+  collision() {
+    let grids = this.getGrids();
+    const IA = this.parent.map[this.parent.enemyIA];
+    const ids = IA.unrollArray(grids);
+    if (ids.size) {
+      for (let id of ids) {
+        const enemy = ENEMY_TG.show(id);
+        let hit = ENGINE.collisionRectangles(this, enemy.actor);
+        if (hit) enemy.die();
+
+      }
+    }
+  }
+  getGrids() {
+    const origin = GRID.pointToGrid(this.point);
+    const end = GRID.pointToGrid(this.end);
+    const grids = [end];
+    for (let i = origin.x; i != end.x; i += this.dir) {
+      grids.push(new Grid(i, origin.y));
+    }
+    return grids;
+  }
+  draw() {
+    ENGINE.layersToClear.add("laser");
+    const CTX = LAYER.laser;
+    CTX.beginPath();
+    CTX.moveTo(this.point.x - ENGINE.VIEWPORT.vx, this.point.y - ENGINE.VIEWPORT.vy);
+    CTX.lineTo(this.end.x - ENGINE.VIEWPORT.vx, this.end.y - ENGINE.VIEWPORT.vy);
+    CTX.closePath();
+    CTX.stroke();
+  }
+  manage(lapsedTime) {
+    if (!this.finalX) this.finalX = this.checkFinal();
+    if (this.done) BALLISTIC_TG.remove(this.id);
+    const deltaTime = lapsedTime / 1000;
+    this.point.x += this.dir * INI.LASER_SPEED_MIN * deltaTime;
+    this.end.x += this.dir * INI.LASER_SPEED_MAX * deltaTime;
+
+    const finalXConditions = {
+      '-1': () => this.end.x < this.finalX,
+      '1': () => this.end.x > this.finalX
+    };
+
+    if (finalXConditions[this.dir]()) {
+      this.end.x = this.finalX;
+      this.done = true;
+    }
+  }
+  checkFinal() {
+    const GA = this.parent.map.GA;
+    let gridX = this.originGrid.x;
+    for (let q = 1; q <= INI.LASER_GRID_LENGTH; q++) {
+      let nextX = q * this.dir + this.originGrid.x;
+      const nextGrid = new Grid(nextX, this.originGrid.y);
+      if (GA.isWall(nextGrid) || GA.isOutOfBounds(nextGrid)) break;
+      gridX = nextX;
+    }
+    if (this.dir === 1) gridX++;
+    let piX = gridX * ENGINE.INI.GRIDPIX;
+    if (this.direction === 1) piX--;
+    return piX;
   }
 }
 
@@ -379,7 +481,8 @@ const HERO = {
   useLamp() {
     if (!DEBUG.INF_LAMPS) HERO.lamp = false;
     TITLE.lamp();
-    ENEMY_TG.clearAll();
+    ENEMY_TG.performOnPool("die");
+    //ENEMY_TG.clearAll();
   },
   manage(lapsedTime) {
     HERO.move(lapsedTime);
@@ -390,7 +493,7 @@ const HERO = {
     const IA = MAP[GAME.level].map[ENEMY_TG.IA]
     const id = IA.unroll(HERO.moveState.homeGrid);
     if (id.length) {
-      console.warn("enemy collision to id", id);
+      //console.warn("enemy collision to id", id);
       ENEMY_TG.remove(id);
       HERO.die();
     }
@@ -538,93 +641,6 @@ const HERO = {
   }
 };
 
-class Laser {
-  constructor(point, dir, grid) {
-    this.point = point;
-    this.dir = dir.x;                 //one dimensional (x) direction!
-    this.dirIndex = dir.toInt();
-    this.speed = INI.LASER_SPEED_MAX;
-    this.end = new Point(this.point.x + INI.LASER_START * this.dir, this.point.y);
-    this.done = false;
-    this.originGrid = grid;
-    this.finalX = null;
-  }
-  setArea() {
-    let x;
-    if (this.dir === 1) {
-      x = this.point.x;
-    } else x = this.end.x;
-    this.area = new Area(x, this.point.y, Math.abs(this.point.x - this.end.x), 1);
-  }
-  collision() {
-    let grids = this.getGrids();
-    console.warn("laser collision, grids", grids);
-    const IA = this.parent.map[this.parent.enemyIA];
-    const ids = IA.unrollArray(grids);
-    if (ids.size) {
-      console.log("ids", ids);
-      for (let id of ids) {
-        const enemy = ENEMY_TG.show(id);
-        console.log("id", id, enemy);
-        let hit = ENGINE.collisionRectangles(this, enemy.actor);
-        if (hit) {
-          console.error("hit", enemy);
-          enemy.die();
-        }
-      }
-    }
-  }
-  getGrids() {
-    const origin = GRID.pointToGrid(this.point);
-    const end = GRID.pointToGrid(this.end);
-    const grids = [end];
-    for (let i = origin.x; i != end.x; i += this.dir) {
-      grids.push(new Grid(i, origin.y));
-    }
-    return grids;
-  }
-  draw() {
-    ENGINE.layersToClear.add("laser");
-    const CTX = LAYER.laser;
-    CTX.beginPath();
-    CTX.moveTo(this.point.x - ENGINE.VIEWPORT.vx, this.point.y - ENGINE.VIEWPORT.vy);
-    CTX.lineTo(this.end.x - ENGINE.VIEWPORT.vx, this.end.y - ENGINE.VIEWPORT.vy);
-    CTX.closePath();
-    CTX.stroke();
-  }
-  manage(lapsedTime) {
-    if (!this.finalX) this.finalX = this.checkFinal();
-    if (this.done) BALLISTIC_TG.remove(this.id);
-    const deltaTime = lapsedTime / 1000;
-    this.point.x += this.dir * INI.LASER_SPEED_MIN * deltaTime;
-    this.end.x += this.dir * INI.LASER_SPEED_MAX * deltaTime;
-
-    const finalXConditions = {
-      '-1': () => this.end.x < this.finalX,
-      '1': () => this.end.x > this.finalX
-    };
-
-    if (finalXConditions[this.dir]()) {
-      this.end.x = this.finalX;
-      this.done = true;
-    }
-  }
-  checkFinal() {
-    const GA = this.parent.map.GA;
-    let gridX = this.originGrid.x;
-    for (let q = 1; q <= INI.LASER_GRID_LENGTH; q++) {
-      let nextX = q * this.dir + this.originGrid.x;
-      const nextGrid = new Grid(nextX, this.originGrid.y);
-      if (GA.isWall(nextGrid) || GA.isOutOfBounds(nextGrid)) break;
-      gridX = nextX;
-    }
-    if (this.dir === 1) gridX++;
-    let piX = gridX * ENGINE.INI.GRIDPIX;
-    if (this.direction === 1) piX--;
-    return piX;
-  }
-}
-
 const GAME = {
   start() {
     console.log("GAME started");
@@ -684,9 +700,9 @@ const GAME = {
     GAME.firstFrameDraw(level);
     GAME.timer = new CountDown("gameTime", DEFINE[GAME.level].time, GAME.timeIsUp);
     //debug
-    HERO.goto(new Grid(22, 9)); //exit
-    //HERO.goto(new Grid(11, 1)); //key
-    HERO.hasKey = true; //DEBUG
+    //HERO.goto(new Grid(22, 9)); //exit
+    HERO.goto(new Grid(11, 1)); //key
+    //HERO.hasKey = true; //DEBUG
     //
     NEST.start();
     GAME.resume();
@@ -701,7 +717,7 @@ const GAME = {
     //console.log(".nest", nest);
     const enemy = new Enemy(nest.grid, nest.dir, type, typeName);
     ENEMY_TG.add(enemy);
-    console.warn("spawning... from", id, "enemy", enemy);
+    //console.warn("spawning... from", id, "enemy", enemy);
   },
   timeIsUp() {
     console.error("TIME ENDS");
@@ -763,6 +779,7 @@ const GAME = {
     FLOOR_OBJECT.refresh();
     ENEMY_TG.init(MAP[level].map);
     BALLISTIC_TG.init(MAP[level].map);
+    DESTRUCTION_ANIMATION.init(null);
 
     //drawing of statics
     BUMP2D.draw();
@@ -840,6 +857,7 @@ const GAME = {
     CHANGING_ANIMATION.manage(lapsedTime);
     ENEMY_TG.manage(lapsedTime, HERO);
     BALLISTIC_TG.manage(lapsedTime);
+    DESTRUCTION_ANIMATION.manage(lapsedTime);
     GAME.respond();
     ENGINE.TIMERS.update();
     GAME.frameDraw(lapsedTime);
@@ -849,19 +867,11 @@ const GAME = {
     GAME.updateVieport();
     ENEMY_TG.draw();
     BALLISTIC_TG.draw();
+    DESTRUCTION_ANIMATION.draw(lapsedTime);
     HERO.draw();
     VANISHING.draw();
     CHANGING_ANIMATION.draw();
     TITLE.updateTime();
-    //
-    //
-    //GAME.drawAnimation();
-    //ENEMY.draw();
-    //LASER.draw();
-    //EXPLOSIONS.draw();
-    //MINIMAP.refresh();
-    //TITLE.score();
-    //TITLE.updateTime();
     if (DEBUG.FPS) GAME.FPS(lapsedTime);
   },
   respond() {
@@ -1011,7 +1021,6 @@ const GAME = {
   addScore(score) {
     GAME.score += score;
     TITLE.score();
-    //score IAM (text IAM)
   }
 };
 

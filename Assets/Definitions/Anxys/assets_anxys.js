@@ -66,6 +66,11 @@ LoadSheets = [
   { srcName: "zombie2", type: "png", count: 3, name: "Ghoul" },
 ];
 
+LoadSequences = [
+  { srcName: "Sequences/SHIP_exp", name: "ShipExp", type: "png", count: 8 },
+  { srcName: "Sequences/ALIEN_exp", name: "AlienExp", type: "png", count: 6 },
+];
+
 console.log("Assets for Anxys completed");
 
 /* var BrickWall = new Tile("BrickWall", 128, 128, "jpg");
