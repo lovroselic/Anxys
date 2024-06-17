@@ -42,7 +42,7 @@ const INI = {
 };
 
 const PRG = {
-  VERSION: "1.04.00",
+  VERSION: "1.04.01",
   NAME: "Anxys",
   YEAR: "2018",
   CSS: "color: #239AFF;",
