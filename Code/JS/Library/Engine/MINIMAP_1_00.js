@@ -73,7 +73,7 @@ const MINIMAP = {
         this.DATA.drawX = this.DATA.x + ((W - this.DATA.w) / 2) | 0;
         this.DATA.drawY = this.DATA.y + ((H - this.DATA.h) / 2) | 0;
     },
-    draw(radar, player = null) {
+    draw(radar, player = null, viewport = false) {
         ENGINE.clearLayer(this.DATA.layer);
         let CTX = LAYER[this.DATA.layer];
         if (MINIMAP.SETTING.FOG) {
@@ -165,10 +165,6 @@ const MINIMAP = {
 
         CTX.fillStyle = MINIMAP.LEGEND.HERO;
 
-        if (this.VERBOSE) {
-            console.info("Player", this.player, this.player.pos);
-        }
-
         let heroPos;
         if (player) {
             heroPos = player.pos;
@@ -185,11 +181,17 @@ const MINIMAP = {
         //enemy if radar
         if (radar) {
             CTX.fillStyle = MINIMAP.LEGEND.ENEMY;
-            const todo = [ENTITY3D, DYNAMIC_ITEM3D];
+            const todo = [ENTITY3D, DYNAMIC_ITEM3D, ENEMY_TG];
             for (const IAM of todo) {
+                if (!IAM.POOL) continue;
                 for (const entity of IAM.POOL) {
                     if (!entity) continue;
-                    const position = Grid.toClass(entity.moveState.grid);
+                    let position;
+                    if (entity.moveState.grid) {
+                        position = Grid.toClass(entity.moveState.grid)
+                    } else if (entity.moveState.homeGrid) {
+                        position = Grid.toClass(entity.moveState.homeGrid);
+                    } else throw "MINIMAP can get enemy position from grid";
                     CTX.pixelAt(
                         this.DATA.drawX + position.x * this.DATA.PIX_SIZE,
                         this.DATA.drawY + position.y * this.DATA.PIX_SIZE,
@@ -197,6 +199,16 @@ const MINIMAP = {
                     );
                 }
             }
+        }
+
+        if (viewport) {
+            const factor = this.DATA.PIX_SIZE / ENGINE.INI.GRIDPIX;
+            CTX.strokeStyle = "yellow";
+            CTX.strokeRect(this.DATA.drawX + ENGINE.VIEWPORT.vx * factor - 1,
+                this.DATA.drawY + ENGINE.VIEWPORT.vy * factor - 1,
+                ENGINE.gameWIDTH * factor + 1,
+                ENGINE.gameHEIGHT * factor + 1
+            );
         }
     },
     unveil(at, vision = 1) {

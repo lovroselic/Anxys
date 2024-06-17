@@ -42,7 +42,7 @@ const INI = {
 };
 
 const PRG = {
-  VERSION: "1.04.02",
+  VERSION: "1.04.03",
   NAME: "Anxys",
   YEAR: "2018",
   CSS: "color: #239AFF;",
@@ -822,23 +822,6 @@ const GAME = {
 
     if (DEBUG.GRID) GRID.grid();
     if (DEBUG.COORD) GRID.paintCoord("coord", MAP[GAME.level].map);
-    /*     GRID.repaint(
-          MAP[level].grid,
-          SPRITE[MAP[level].floor],
-          SPRITE[MAP[level].background]
-        );
-        GRID.paintNest(MAP[level].nest, "nest", true);
-        GRID.paintWarp(MAP[level].warp, "nest", false);
-        ENGINE.flattenLayers("wall", "floor");
-        ENGINE.flattenLayers("nest", "floor");
-        GAME.updateStatic(level);
-        ENGINE.VIEWPORT.changed = true;
-        GAME.updateVieport();
-        TITLE.main();
-        TITLE.lives();
-        TITLE.lamp();
-        HERO.draw();
-        MINIMAP.draw(); */
   },
   wait() {
     if (ENGINE.GAME.stopAnimation) return;
@@ -876,7 +859,7 @@ const GAME = {
     VANISHING.draw();
     CHANGING_ANIMATION.draw();
     TITLE.updateTime();
-    MINIMAP.draw(false, HERO);
+    MINIMAP.draw(true, HERO, true);
     if (DEBUG.FPS) GAME.FPS(lapsedTime);
   },
   respond() {
