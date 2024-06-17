@@ -42,12 +42,11 @@ const INI = {
 };
 
 const PRG = {
-  VERSION: "1.04.01",
+  VERSION: "1.04.02",
   NAME: "Anxys",
   YEAR: "2018",
   CSS: "color: #239AFF;",
   INIT() {
-    console.clear();
     console.log("%c**************************************************************************************************************************************", PRG.CSS);
     console.log(`${PRG.NAME} ${PRG.VERSION} by Lovro Selic, (c) LaughingSkull ${PRG.YEAR} on ${navigator.userAgent}`);
     console.log("%c**************************************************************************************************************************************", PRG.CSS);
@@ -83,9 +82,6 @@ const PRG = {
     ENGINE.gameHEIGHT = 576;
     ENGINE.titleHEIGHT = INI.titleHeight;
     ENGINE.bottomHEIGHT = INI.bottomHeight;
-    //ENGINE.checkProximity = false;
-    //ENGINE.checkIntersection = false;
-    //ENGINE.INI.COLLISION_SAFE = 50;
 
     $(ENGINE.gameWindowId).width(ENGINE.gameWIDTH + 4);
     ENGINE.addBOX("TITLE", ENGINE.gameWIDTH, ENGINE.titleHEIGHT, ["title", "minimap", "dynamic_map", "key", "score", "time"]);
@@ -473,6 +469,7 @@ class Laser {
 const HERO = {
   goto(grid) {
     this.moveState.reset(grid);
+    HERO.pos = HERO.moveState.homeGrid;
     HERO.moved = true;
     GRID.gridToSprite(this.moveState.startGrid, HERO.actor);
     ENGINE.VIEWPORT.check(HERO.actor);
@@ -513,6 +510,7 @@ const HERO = {
     if (HERO.moveState.moving) {
       GRID.translateMove(HERO, lapsedTime, HERO.moveState.gridArray, true);
       HERO.moved = true;
+      HERO.pos = HERO.moveState.homeGrid;       // compatibility with MINIMAP
     }
   },
   changeDirection(dir) {
@@ -581,10 +579,12 @@ const HERO = {
     HERO.canShoot = false;
     HERO.dead = false;
     HERO.moved = true;
+    HERO.pos = null;
   },
   init() {
     GRID.gridToSprite(MAP[GAME.level].start, HERO.actor);
     HERO.moveState = new MoveState(MAP[GAME.level].start, DOWN, MAP[GAME.level].map.GA);
+    HERO.pos = HERO.moveState.homeGrid;
     ENGINE.VIEWPORT.check(HERO.actor);
     ENGINE.VIEWPORT.alignTo(HERO.actor);
     HERO.hasKey = false;
@@ -654,6 +654,7 @@ const GAME = {
     ENGINE.hideMouse();
     //AI.VERBOSE = true;
     AI.changeAdvancerToHuntImmediatelly();
+    MINIMAP.verbose();
 
     $("#pause").prop("disabled", false);
     $("#pause").off();
@@ -780,6 +781,9 @@ const GAME = {
     ENEMY_TG.init(MAP[level].map);
     BALLISTIC_TG.init(MAP[level].map);
     DESTRUCTION_ANIMATION.init(null);
+    MINIMAP.setOffset(164, 32);
+    MINIMAP.init(MAP[level].map, 500 - 164, ENGINE.titleHEIGHT - 2 * 32, HERO);
+
 
     //drawing of statics
     BUMP2D.draw();
@@ -872,6 +876,7 @@ const GAME = {
     VANISHING.draw();
     CHANGING_ANIMATION.draw();
     TITLE.updateTime();
+    MINIMAP.draw(false, HERO);
     if (DEBUG.FPS) GAME.FPS(lapsedTime);
   },
   respond() {
@@ -1452,57 +1457,6 @@ const TITLE = {
     AUDIO.Title.play();
   },
 };
-
-/* var MINIMAP = {
-  x: 164,
-  y: 32,
-  draw() {
-    var CTX = LAYER.minimap;
-    ENGINE.clearLayer("minimap");
-    CTX.fillStyle = "#666";
-    var grid = MAP[GAME.level].grid;
-    const height = grid.length;
-    const width = grid[0].length;
-    for (var y = 0; y < height; y++) {
-      for (var x = 0; x < width; x++) {
-        if (grid[y].charAt(x) === "1") {
-          CTX.pixelAt(
-            MINIMAP.x + x * INI.MINI_PIX,
-            MINIMAP.y + y * INI.MINI_PIX,
-            INI.MINI_PIX
-          );
-        }
-      }
-    }
-  },
-  refresh() {
-    var CTX = LAYER.dynamic_map;
-    ENGINE.clearLayer("dynamic_map");
-    var EPL = ENEMY.pool.length;
-    for (let q = 0; q < EPL; q++) {
-      CTX.fillStyle = "#F00";
-      CTX.pixelAt(
-        MINIMAP.x + ENEMY.pool[q].homeGrid.x * INI.MINI_PIX,
-        MINIMAP.y + ENEMY.pool[q].homeGrid.y * INI.MINI_PIX,
-        INI.MINI_PIX
-      );
-    }
-    CTX.fillStyle = "#00F";
-    CTX.pixelAt(
-      MINIMAP.x + HERO.homeGrid.x * INI.MINI_PIX,
-      MINIMAP.y + HERO.homeGrid.y * INI.MINI_PIX,
-      INI.MINI_PIX
-    );
-    CTX.strokeStyle = "yellow";
-    var factor = INI.MINI_PIX / ENGINE.INI.GRIDPIX;
-    CTX.strokeRect(
-      MINIMAP.x + ENGINE.VIEWPORT.vx * factor - 1,
-      MINIMAP.y + ENGINE.VIEWPORT.vy * factor - 1,
-      ENGINE.gameWIDTH * factor + 1,
-      ENGINE.gameHEIGHT * factor + 1
-    );
-  }
-}; */
 
 $(document).ready(function () {
   PRG.INIT();
