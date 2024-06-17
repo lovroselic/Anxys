@@ -24,8 +24,8 @@ const INI = {
   bottomHeight: 40,
   HERO_SPEED: 6,
   MINI_PIX: 5,
-  LASER_SPEED_MIN: 500,
-  LASER_SPEED_MAX: 1000,
+  LASER_SPEED_MIN: 600,
+  LASER_SPEED_MAX: 1200,
   LASER_GRID_LENGTH: 5,
   LASER_LENGTH: this.LASER_GRID_LENGTH * ENGINE.INI.GRIDPIX,
   LASER_START: 12,
@@ -42,7 +42,7 @@ const INI = {
 };
 
 const PRG = {
-  VERSION: "1.03.13",
+  VERSION: "1.04.00",
   NAME: "Anxys",
   YEAR: "2018",
   CSS: "color: #239AFF;",

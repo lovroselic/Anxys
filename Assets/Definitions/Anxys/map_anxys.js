@@ -26,12 +26,9 @@ const DEFINE = {
   10: { time: 120, enemy: ["Devil", "Death1", "Death2"] },
 };
 
-
-
 const SPAWN = {
   spawn(map) {
     const GA = map.map.GA;
-    console.log("spawning", map, GA);
     this.warp(map, GA)
     this.door(map, GA);
     this.nest(map);
@@ -44,7 +41,6 @@ const SPAWN = {
       let grid = Grid.toClass(T.homeGrid);
       FLOOR_OBJECT.add(new Treasure(grid, TreasureList[T.id]));
     }
-    console.log("FLOOR_OBJECT", FLOOR_OBJECT);
   },
   key(map) {
     for (let key of map.key) {
@@ -79,7 +75,6 @@ const SPAWN = {
     for (let door of map.door) {
       const grid = Grid.toClass(door.homeGrid);
       const gate = new Gate(grid, GA);
-      console.log("gate", gate);
       BUMP2D.add(gate);
       GA.toWall(grid);
       GA.addDoor(grid);
@@ -91,12 +86,12 @@ const TreasureList = ["GoldCoin", "GoldBar", "Ring", "crownPink", "Crown"];
 
 const EnemyList = {
   Snake: {
-    speed: 2,
+    speed: 3,
     foreSight: 5,
     score: 10
   },
   Ghost: {
-    speed: 3,
+    speed: 4,
     foreSight: 8,
     score: 50
   },
