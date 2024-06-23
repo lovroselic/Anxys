@@ -42,7 +42,7 @@ const INI = {
 };
 
 const PRG = {
-  VERSION: "1.04.05",
+  VERSION: "1.04.06",
   NAME: "Anxys",
   YEAR: "2018",
   CSS: "color: #239AFF;",
@@ -522,6 +522,9 @@ const HERO = {
 
     if (HERO.moveState.gridArray.isOutOfBounds(nextGrid)) {
       if (GRID.same(MAP[GAME.level].exit, HERO.moveState.homeGrid)) {
+
+
+        
         console.error("EXIT level");
       }
 
