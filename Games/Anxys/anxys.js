@@ -16,7 +16,7 @@ const DEBUG = {
   FPS: true,
   GRID: true,
   COORD: true,
-  GOD: true,
+  GOD: false,
 };
 
 const INI = {
@@ -42,7 +42,7 @@ const INI = {
 };
 
 const PRG = {
-  VERSION: "1.04.03",
+  VERSION: "1.04.04",
   NAME: "Anxys",
   YEAR: "2018",
   CSS: "color: #239AFF;",
@@ -532,7 +532,7 @@ const HERO = {
       const valueNext = HERO.moveState.gridArray.getValue(nextGrid);
       const valueThis = HERO.moveState.gridArray.getValue(HERO.moveState.startGrid);
       const IA = MAP[GAME.level].map[BUMP2D.IA];
-      console.log("value nextGrid", valueNext, "this grid", valueThis);
+      //console.log("value nextGrid", valueNext, "this grid", valueThis);
 
       if (valueNext === MAPDICT.WALL && valueThis === MAPDICT.WARP) {
         //warp: next 1, this 32
@@ -604,9 +604,20 @@ const HERO = {
     const laser = new Laser(new Point(x, HERO.actor.y), dir, this.moveState.homeGrid);
     BALLISTIC_TG.add(laser);
   },
+  death() { },
   die() {
     if (HERO.dead) return;
     if (DEBUG.GOD) return;
+    HERO.dead = true;
+    HERO.canShoot = false;
+    console.error("HERO in the processof dying");
+    HERO.paintDeath();
+    //GAME.lives--;
+    //console.log("HERO died!", GAME.lives, "debug", DEBUG.INF_LIVES);
+    //stop timer
+
+
+
     /* ENGINE.GAME.stopAnimation = true;
     GAME.timeRemains = GAME.timeLeft;
     HERO.dead = true;
@@ -624,24 +635,28 @@ const HERO = {
   },
   paintDeath() {
     ENGINE.clearLayer("hero");
-    var CTX = LAYER.hero;
+    //var CTX = LAYER.hero;
     ENGINE.spriteDraw("hero", HERO.actor.vx, HERO.actor.vy, SPRITE.skull);
-    EXPLOSIONS.pool.push(
+
+
+    /* EXPLOSIONS.pool.push(
       new AnimationSPRITE(HERO.actor.x, HERO.actor.y, "ShipExp", 8)
     );
     ENGINE.GAME.stopAnimation = false;
-    ENGINE.GAME.run(HERO.deadHeroAnimation);
+    ENGINE.GAME.run(HERO.deadHeroAnimation); */
   },
   deadHeroAnimation() {
-    EXPLOSIONS.draw();
+
+    /* EXPLOSIONS.draw();
     if (EXPLOSIONS.pool.length === 0) {
       ENGINE.GAME.stopAnimation = true;
       ENGINE.clearLayer("explosion");
-    }
+    } */
   }
 };
 
 const GAME = {
+  //timeRemains: null,
   start() {
     console.log("GAME started");
     if (AUDIO.Title) {
@@ -654,7 +669,8 @@ const GAME = {
     ENGINE.hideMouse();
     //AI.VERBOSE = true;
     AI.changeAdvancerToHuntImmediatelly();
-    MINIMAP.verbose();
+    //MINIMAP.verbose();
+    MINIMAP.quiet();
 
     $("#pause").prop("disabled", false);
     $("#pause").off();

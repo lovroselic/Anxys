@@ -20,7 +20,7 @@ const MINIMAP = {
     verbose() {
         this.VERBOSE = true;
     },
-    quit() {
+    quiet() {
         this.VERBOSE = false;
     },
     LEGEND: {

@@ -42,6 +42,7 @@ LoadSprites = [
   { srcName: "Items/GoldCoin.png", name: "GoldCoin" },
   { srcName: "Items/Ring.png", name: "Ring" },
   { srcName: "Items/crownPink.png", name: "crownPink" },
+  { srcName: "Items/skull_old.png", name: "skull" },
 ];
 
 LoadRotated = [
