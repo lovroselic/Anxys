@@ -11,7 +11,7 @@
 ////////////////////////////////////////////////////
 const DEBUG = {
   FRAME: 0,
-  INF_LIVES: false,
+  INF_LIVES: true,
   INF_LAMPS: true,
   FPS: true,
   GRID: true,
@@ -42,7 +42,7 @@ const INI = {
 };
 
 const PRG = {
-  VERSION: "1.04.04",
+  VERSION: "1.04.05",
   NAME: "Anxys",
   YEAR: "2018",
   CSS: "color: #239AFF;",
@@ -84,8 +84,8 @@ const PRG = {
     ENGINE.bottomHEIGHT = INI.bottomHeight;
 
     $(ENGINE.gameWindowId).width(ENGINE.gameWIDTH + 4);
-    ENGINE.addBOX("TITLE", ENGINE.gameWIDTH, ENGINE.titleHEIGHT, ["title", "minimap", "dynamic_map", "key", "score", "time"]);
-    ENGINE.addBOX("ROOM", ENGINE.gameWIDTH, ENGINE.gameHEIGHT, ["background", "static", "hell", "hero", "animation", "enemy", "laser", "explosion", "text", "dyntext", "FPS", "button"]);
+    ENGINE.addBOX("TITLE", ENGINE.gameWIDTH, ENGINE.titleHEIGHT, ["title", "minimap", "key", "score", "time"]);
+    ENGINE.addBOX("ROOM", ENGINE.gameWIDTH, ENGINE.gameHEIGHT, ["background", "static", "hell", "hero", "deadhero", "animation", "enemy", "laser", "explosion", "text", "dyntext", "FPS", "button"]);
     ENGINE.addBOX("DOWN", ENGINE.gameWIDTH, ENGINE.bottomHEIGHT, ["bottom", "lives", "lamp", "bottomText"]);
     ENGINE.addBOX("LEVEL", ENGINE.gameWIDTH, ENGINE.gameHEIGHT, ["floor", "wall", "nest", "template_static", "template_dynamic", "grid", "coord"]);
 
@@ -279,6 +279,7 @@ class Key extends FloorItem {
     if (HERO.hasKey) return false;
     HERO.hasKey = true;
     TITLE.key();
+    AUDIO.Keys.play();
     return true;
   }
 }
@@ -297,6 +298,7 @@ class Treasure extends FloorItem {
   }
   pick() {
     Treasure.inc();
+    AUDIO.Pick.play();
     return true;
   }
   static reset() {
@@ -376,6 +378,7 @@ class Enemy {
     ENGINE.spriteDraw('enemy', this.actor.vx, this.actor.vy, this.actor.sprite());
   }
   die() {
+    AUDIO.Explosion.play();
     DESTRUCTION_ANIMATION.add(new GeneralDestruction(new Point(this.actor.x, this.actor.y), "AlienExp"));
     GAME.addScore(this.score);
     ENEMY_TG.remove(this.id);
@@ -479,7 +482,7 @@ const HERO = {
     if (!DEBUG.INF_LAMPS) HERO.lamp = false;
     TITLE.lamp();
     ENEMY_TG.performOnPool("die");
-    //ENEMY_TG.clearAll();
+    AUDIO.KillAll.play();
   },
   manage(lapsedTime) {
     HERO.move(lapsedTime);
@@ -569,31 +572,21 @@ const HERO = {
   },
   startInit() {
     HERO.speed = INI.HERO_SPEED;
-    HERO.actor = new ACTOR("Ghosty", 0, 0, "front", ASSET.Ghosty);
-    HERO.w2 = Math.floor(HERO.actor.width / 2);
-    HERO.h2 = Math.floor(HERO.actor.height / 2);
-    HERO.left = HERO.w2;
-    HERO.right = MAP[GAME.level].pw - HERO.left;
-    HERO.up = HERO.h2;
-    HERO.down = MAP[GAME.level].ph - HERO.up;
-    HERO.canShoot = false;
-    HERO.dead = false;
-    HERO.moved = true;
     HERO.pos = null;
+    HERO.hasKey = false;
+    HERO.lamp = true;
   },
   init() {
+    ENGINE.clearLayer("deadhero");
+    HERO.actor = new ACTOR("Ghosty", 0, 0, "front", ASSET.Ghosty);
     GRID.gridToSprite(MAP[GAME.level].start, HERO.actor);
     HERO.moveState = new MoveState(MAP[GAME.level].start, DOWN, MAP[GAME.level].map.GA);
     HERO.pos = HERO.moveState.homeGrid;
     ENGINE.VIEWPORT.check(HERO.actor);
     ENGINE.VIEWPORT.alignTo(HERO.actor);
-    HERO.hasKey = false;
     HERO.moved = true;
-    HERO.right = MAP[GAME.level].pw - HERO.left;
-    HERO.down = MAP[GAME.level].ph - HERO.up;
-    HERO.contMove = false; //
     HERO.canShoot = true;
-    HERO.lamp = true;
+    HERO.dead = false;
   },
   shoot(dir) {
     if (!HERO.canShoot) return;
@@ -603,60 +596,40 @@ const HERO = {
     const x = HERO.actor.x + ENGINE.INI.GRIDPIX / 4 * dir.x;
     const laser = new Laser(new Point(x, HERO.actor.y), dir, this.moveState.homeGrid);
     BALLISTIC_TG.add(laser);
+    AUDIO.Buzz.play();
   },
-  death() { },
+  death() {
+    console.warn("HERO DIES");
+    ENGINE.GAME.ANIMATION.stop();
+    AUDIO.Explosion.play();
+    GAME.lives--;
+    TITLE.lives();
+
+    if (GAME.lives < 0 && !DEBUG.INF_LIVES) {
+      TITLE.gameOver();
+      GAME.end();
+    } else {
+      AUDIO.EvilLaughter.onended = GAME.levelContinue;
+      AUDIO.EvilLaughter.play();
+    }
+  },
   die() {
     if (HERO.dead) return;
     if (DEBUG.GOD) return;
     HERO.dead = true;
     HERO.canShoot = false;
-    console.error("HERO in the processof dying");
     HERO.paintDeath();
-    //GAME.lives--;
-    //console.log("HERO died!", GAME.lives, "debug", DEBUG.INF_LIVES);
-    //stop timer
-
-
-
-    /* ENGINE.GAME.stopAnimation = true;
-    GAME.timeRemains = GAME.timeLeft;
-    HERO.dead = true;
-    HERO.canShoot = false;
-    HERO.paintDeath();
-    GAME.lives--;
-    console.log("HERO died!", GAME.lives, "debug", DEBUG.INF_LIVES);
-    if (GAME.lives < 0 && !DEBUG.INF_LIVES) {
-      console.log("GAME OVER");
-      TITLE.gameOver();
-      GAME.end();
-    } else {
-      setTimeout(GAME.levelContinue, INI.DEATH_TIMEOUT);
-    } */
+    ENGINE.TIMERS.stop();
+    ENGINE.TIMERS.remove(NEST.timerID);
   },
   paintDeath() {
     ENGINE.clearLayer("hero");
-    //var CTX = LAYER.hero;
-    ENGINE.spriteDraw("hero", HERO.actor.vx, HERO.actor.vy, SPRITE.skull);
-
-
-    /* EXPLOSIONS.pool.push(
-      new AnimationSPRITE(HERO.actor.x, HERO.actor.y, "ShipExp", 8)
-    );
-    ENGINE.GAME.stopAnimation = false;
-    ENGINE.GAME.run(HERO.deadHeroAnimation); */
+    ENGINE.spriteDraw("deadhero", HERO.actor.vx, HERO.actor.vy, SPRITE.skull);
+    DESTRUCTION_ANIMATION.add(new GeneralDestruction(new Point(HERO.actor.x, HERO.actor.y), "ShipExp"));
   },
-  deadHeroAnimation() {
-
-    /* EXPLOSIONS.draw();
-    if (EXPLOSIONS.pool.length === 0) {
-      ENGINE.GAME.stopAnimation = true;
-      ENGINE.clearLayer("explosion");
-    } */
-  }
 };
 
 const GAME = {
-  //timeRemains: null,
   start() {
     console.log("GAME started");
     if (AUDIO.Title) {
@@ -683,6 +656,7 @@ const GAME = {
     GAME.level = 1;                                       //default
     GAME.score = 0;
     GAME.lives = 4;                                       //DEFAULT
+    //GAME.lives = 1;                                     //debug
 
     LAYER.laser.strokeStyle = "#F00";
     HERO.startInit();
@@ -690,25 +664,19 @@ const GAME = {
   },
   prepareForRestart() {
     //everything required for safe restart
-    let clear = ["background", "text", "FPS", "button", "bottomText"];
+    let clear = ["background", "text", "FPS", "button", "bottomText", "deadhero"];
     ENGINE.clearManylayers(clear);
     MAP = $.extend(true, {}, BACKUP_MAP);
   },
-  /* levelContinue() {
+  levelContinue() {
     console.log("LEVEL", GAME.level, "continues ...");
-    HERO.dead = false;
-    ENEMY.pool.clear();
-    LASER.pool.clear();
-    GRID.gridToSprite(HERO.homeGrid, HERO.actor);
-    ENGINE.VIEWPORT.alignTo(HERO.actor);
-    HERO.moved = true;
-    GAME.firstFrameDraw(GAME.level);
-    NEST.timeout();
-    HERO.canShoot = true;
-    ENGINE.GAME.stopAnimation = false;
-    GAME.timeStart = Date.now();
-    ENGINE.GAME.run(GAME.run);
-  }, */
+    HERO.init();
+    ENEMY_TG.clearAll();
+    BALLISTIC_TG.clearAll();
+    ENGINE.TIMERS.start();
+    NEST.start();
+    GAME.resume();
+  },
   async levelStart(level) {
     console.log("starting level", level);
     GAME.levelCompleted = false;
@@ -717,11 +685,12 @@ const GAME = {
     GAME.firstFrameDraw(level);
     GAME.timer = new CountDown("gameTime", DEFINE[GAME.level].time, GAME.timeIsUp);
     //debug
-    //HERO.goto(new Grid(22, 9)); //exit
-    HERO.goto(new Grid(11, 1)); //key
-    //HERO.hasKey = true; //DEBUG
+    HERO.goto(new Grid(22, 9)); //exit
+    //HERO.goto(new Grid(11, 1)); //key
+    HERO.hasKey = true; //DEBUG
     //
     NEST.start();
+    AUDIO.StartLevel.play();
     GAME.resume();
   },
   canSpawn() {
@@ -864,6 +833,7 @@ const GAME = {
     GAME.respond();
     ENGINE.TIMERS.update();
     GAME.frameDraw(lapsedTime);
+    if (HERO.dead) IAM.checkIfProcessesComplete([DESTRUCTION_ANIMATION], HERO.death);
   },
   frameDraw(lapsedTime) {
     ENGINE.clearLayerStack();
@@ -930,27 +900,20 @@ const GAME = {
       HERO.changeDirection(DOWN);
       return;
     }
-
-    /* if (HERO.contMove) HERO.move(HERO.dir);
-    return; */
   },
   setup() {
     console.log("GAME SETUP started");
     AUDIO.OpenGate.rate = 2.0;
   },
   end() {
-    console.log("GAME ENDED");
-    //check score
-    GAME.checkScore();
+    ENGINE.showMouse();
+    AUDIO.Death.onended = GAME.checkScore;
+    AUDIO.Death.play();
   },
   checkScore() {
-    setTimeout(function () {
-      SCORE.checkScore(GAME.score);
-      SCORE.hiScore();
-      TITLE.main();
-      $("#startGame").removeClass("hidden");
-      GAME.restarted = true;
-    }, 1000);
+    SCORE.checkScore(GAME.score);
+    SCORE.hiScore();
+    TITLE.startTitle();
   },
   setTitle() {
     const text = GAME.generateTitleText();
@@ -1031,7 +994,7 @@ const GAME = {
 const TITLE = {
   startTitle() {
     console.log("starting title");
-    ENGINE.clearManylayers([]);
+    ENGINE.clearManylayers(["text", "lives", "lamp", "title", "minimap", "key", "score", "time", "deadhero"]);
     //if (AUDIO.Title) TITLE.music();       //blocked for annoyance in devlopment
     TITLE.backs();
     ENGINE.draw("background", (ENGINE.gameWIDTH - TEXTURE.Title.width) / 2, (ENGINE.gameHEIGHT - TEXTURE.Title.height) / 2, TEXTURE.Title);

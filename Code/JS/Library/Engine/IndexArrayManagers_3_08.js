@@ -120,6 +120,12 @@ class IAM {
             if (obj) obj[func]();
         }
     }
+    static checkIfProcessesComplete(IAM_list, callback) {
+        for (const iam of IAM_list) {
+            if (iam.POOL.length) return;
+        }
+        callback();
+    }
 }
 
 /** Profile IA Managers */
@@ -466,7 +472,7 @@ class Destruction_Animation extends IAM {
                 this.remove(anim.id);
             }
             if (!anim) continue;
-            
+
         }
     }
 }

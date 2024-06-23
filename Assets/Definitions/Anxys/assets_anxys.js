@@ -11,6 +11,15 @@ LoadTextures = [
 LoadAudio = [
   { srcName: "Single Photon's Shadow.mp3", name: "Title" },
   { srcName: "OpenGate.mp3", name: "OpenGate" },
+  { srcName: "Explosion1.mp3", name: "Explosion" },
+  { srcName: "Evil laughter.mp3", name: "EvilLaughter" },
+  { srcName: "death.mp3", name: "Death" },
+  { srcName: "Keys.mp3", name: "Keys" },
+  { srcName: "PickCoin.mp3", name: "Pick" },
+  { srcName: "TutClear.mp3", name: "ClearLevel" },
+  { srcName: "TutStart.mp3", name: "StartLevel" },
+  { srcName: "short-buzz.mp3", name: "Buzz" },
+  { srcName: "Scroll.mp3", name: "KillAll" },
 ];
 
 LoadFonts = [
