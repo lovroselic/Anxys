@@ -406,7 +406,7 @@ const GRID = {
     if (h != map.grid.length) throw `Map corrupted: height: ${h} grid.length: ${map.grid.length}`;
     var binary = [];
     for (let i = 0; i < h; i++) {
-      let bin = float64ToInt64Binary(map.grid[i]);
+      let bin = float64ToInt64Binary(map.grid[i]).padStart(w, "0");
       if (trim) bin = bin.slice(-w);
       binary.push(bin);
     }

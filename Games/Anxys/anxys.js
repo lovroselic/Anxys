@@ -42,7 +42,7 @@ const INI = {
 };
 
 const PRG = {
-  VERSION: "1.04.07",
+  VERSION: "1.04.08",
   NAME: "Anxys",
   YEAR: "2018",
   CSS: "color: #239AFF;",
@@ -85,9 +85,9 @@ const PRG = {
 
     $(ENGINE.gameWindowId).width(ENGINE.gameWIDTH + 4);
     ENGINE.addBOX("TITLE", ENGINE.gameWIDTH, ENGINE.titleHEIGHT, ["title", "minimap", "key", "score", "time"]);
-    ENGINE.addBOX("ROOM", ENGINE.gameWIDTH, ENGINE.gameHEIGHT, ["background", "static", "hell", "hero", "deadhero", "animation", "enemy", "laser", "explosion", "text", "dyntext", "FPS", "button"]);
+    ENGINE.addBOX("ROOM", ENGINE.gameWIDTH, ENGINE.gameHEIGHT, ["background", "static", "hero", "deadhero", "animation", "enemy", "laser", "explosion", "text", "dyntext", "FPS", "button"]);
     ENGINE.addBOX("DOWN", ENGINE.gameWIDTH, ENGINE.bottomHEIGHT, ["bottom", "lives", "lamp", "bottomText"]);
-    ENGINE.addBOX("LEVEL", ENGINE.gameWIDTH, ENGINE.gameHEIGHT, ["floor", "wall", "nest", "template_static", "template_dynamic", "grid", "coord"]);
+    ENGINE.addBOX("LEVEL", ENGINE.gameWIDTH, ENGINE.gameHEIGHT, ["floor", "wall", "nest", "template_static", "grid", "coord"]);
 
     //$("#LEVEL").addClass("hidden");
   },
@@ -654,6 +654,7 @@ const GAME = {
     GAME.extraLife = SCORE.extraLife.clone();
     GAME.prepareForRestart();                             //everything required for safe restart
     GAME.level = 1;                                       //default
+    //GAME.level = 2;                                       //debugz
     GAME.score = 0;
     GAME.lives = 4;                                       //DEFAULT
     //GAME.lives = 1;                                     //debug
@@ -679,16 +680,13 @@ const GAME = {
   },
   async levelStart(level) {
     console.log("starting level", level);
+    
     GAME.levelCompleted = false;
     ENGINE.VIEWPORT.reset();
     await GAME.initLevel(level);
+    ENGINE.TIMERS.clear();
     GAME.firstFrameDraw(level);
     GAME.timer = new CountDown("gameTime", DEFINE[GAME.level].time, GAME.timeIsUp);
-    //debug
-    HERO.goto(new Grid(22, 9)); //exit
-    //HERO.goto(new Grid(11, 1)); //key
-    HERO.hasKey = true; //DEBUG
-    //
     NEST.start();
     AUDIO.StartLevel.play();
     GAME.resume();
@@ -714,13 +712,15 @@ const GAME = {
     console.error("creating next level: ", GAME.level);
     ENGINE.clearLayer("text");
     ENGINE.clearLayer("dyntext");
+
+
     if (GAME.level > INI.LAST_LEVEL) {
       ENGINE.GAME.stopAnimation = true;
       console.log("game have been won. please code the end you lazy bastard.");
       ENGINE.clearLayer("hero");
       TITLE.gameWon();
       GAME.end();
-    } else GAME.levelStart();
+    } else GAME.levelStart(GAME.level);
   },
   levelEnd() {
     GAME.timeLeft = Math.floor(ENGINE.TIMERS.access("gameTime").remains());
@@ -733,6 +733,7 @@ const GAME = {
   async initLevel(level) {
     console.log("init level", level);
     console.time("init");
+    ENGINE.clearManylayers(["wall", "floor", "nest", "template_static", "background", "static"]);
 
     MAP[level].binary = GRID.unpackIntegerMap(MAP[level]);
     MAP[level].map = FREE_MAP.create(MAP[level].width, MAP[level].height, null, 2);
@@ -756,6 +757,7 @@ const GAME = {
     NEST.configure(INI.SPAWN_DELAY, GAME.canSpawn, GAME.spawn, HERO);
     console.info("NEST", NEST);
     FLOOR_OBJECT.init(MAP[level].map);
+    FLOOR_OBJECT.clearAll();
     SPAWN.spawn(MAP[level]);
     BUMP2D.refresh();
     FLOOR_OBJECT.refresh();
@@ -802,7 +804,6 @@ const GAME = {
     if (DEBUG.GRID) GRID.grid();
     if (DEBUG.COORD) GRID.paintCoord("coord", MAP[GAME.level].map);
   },
-
   run(lapsedTime) {
     if (ENGINE.GAME.stopAnimation) return;
 
@@ -844,6 +845,8 @@ const GAME = {
     //fall throught section
     if (map[ENGINE.KEY.map.F9]) {
       console.log("DEBUG:", HERO);
+      HERO.goto(new Grid(22, 9)); //exit
+      HERO.hasKey = true; //DEBUG
     }
 
     if (map[ENGINE.KEY.map.A]) {
