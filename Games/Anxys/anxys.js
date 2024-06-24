@@ -42,7 +42,7 @@ const INI = {
 };
 
 const PRG = {
-  VERSION: "1.04.06",
+  VERSION: "1.04.07",
   NAME: "Anxys",
   YEAR: "2018",
   CSS: "color: #239AFF;",
@@ -522,12 +522,9 @@ const HERO = {
 
     if (HERO.moveState.gridArray.isOutOfBounds(nextGrid)) {
       if (GRID.same(MAP[GAME.level].exit, HERO.moveState.homeGrid)) {
-
-
-        
-        console.error("EXIT level");
+        //console.error("EXIT level");
+        GAME.levelEnd();
       }
-
       return;
     }
 
@@ -714,7 +711,7 @@ const GAME = {
   },
   nextLevel() {
     GAME.level++;
-    console.log("creating next level: ", GAME.level);
+    console.error("creating next level: ", GAME.level);
     ENGINE.clearLayer("text");
     ENGINE.clearLayer("dyntext");
     if (GAME.level > INI.LAST_LEVEL) {
@@ -726,16 +723,12 @@ const GAME = {
     } else GAME.levelStart();
   },
   levelEnd() {
-    console.log("level ", GAME.level, " ended.");
+    GAME.timeLeft = Math.floor(ENGINE.TIMERS.access("gameTime").remains());
+    console.log("level ", GAME.level, " ended.", "GAME.timeLeft", GAME.timeLeft);
     HERO.canShoot = false;
-    ENGINE.GAME.stopAnimation = true;
     TITLE.levelEndTemplate();
     GAME.timeBonus = 0;
-
-    setTimeout(function () {
-      ENGINE.GAME.stopAnimation = false;
-      ENGINE.GAME.run(TITLE.run);
-    }, ENGINE.INI.ANIMATION_INTERVAL * 2);
+    ENGINE.GAME.ANIMATION.next(TITLE.run);
   },
   async initLevel(level) {
     console.log("init level", level);
@@ -772,12 +765,10 @@ const GAME = {
     MINIMAP.setOffset(164, 32);
     MINIMAP.init(MAP[level].map, 500 - 164, ENGINE.titleHEIGHT - 2 * 32, HERO);
 
-
     //drawing of statics
     BUMP2D.draw();
     NEST.draw();
     await ENGINE.flattenLayers("nest", "floor");
-
     await BITMAP.store(LAYER.floor.canvas, "maze");
 
     console.timeEnd("init");
@@ -811,19 +802,7 @@ const GAME = {
     if (DEBUG.GRID) GRID.grid();
     if (DEBUG.COORD) GRID.paintCoord("coord", MAP[GAME.level].map);
   },
-  wait() {
-    if (ENGINE.GAME.stopAnimation) return;
-    var map = ENGINE.GAME.keymap;
-    if (map[ENGINE.KEY.map.enter]) {
-      if (GAME.levelCompleted) {
-        ENGINE.GAME.stopAnimation = true;
-        GAME.levelCompleted = false;
-        GAME.nextLevel();
-      }
-      ENGINE.GAME.keymap[ENGINE.KEY.map.enter] = false;
-      return;
-    }
-  },
+
   run(lapsedTime) {
     if (ENGINE.GAME.stopAnimation) return;
 
@@ -1239,33 +1218,22 @@ const TITLE = {
   },
   run() {
     if (ENGINE.GAME.stopAnimation) return;
+
     TITLE.levelEndRefresh();
-    if (GAME.timeLeft <= 0) {
-      ENGINE.GAME.stopAnimation = true;
-
-      setTimeout(function () {
-        var CTX = LAYER.dyntext;
-        var fs = 18;
-        CTX.font = fs + "px Garamond";
-        CTX.fillStyle = "#F00";
-        CTX.shadowColor = "#A00";
-        CTX.fillText(
-          "Press ENTER to continue to the next level",
-          TITLE.stack.x,
-          TITLE.stack.y + 40
-        );
-        GAME.levelCompleted = true;
-        GAME.score += GAME.timeBonus;
-        TITLE.score();
-
-        setTimeout(function () {
-          ENGINE.GAME.stopAnimation = false;
-          ENGINE.GAME.run(GAME.wait);
-        }, ENGINE.INI.ANIMATION_INTERVAL * 2);
-      }, ENGINE.INI.ANIMATION_INTERVAL * 2);
-      return;
+    if (GAME.timeLeft === 0) {
+      var CTX = LAYER.dyntext;
+      var fs = 18;
+      CTX.font = fs + "px Garamond";
+      CTX.fillStyle = "#F00";
+      CTX.shadowColor = "#A00";
+      CTX.fillText("Press ENTER to continue to the next level", TITLE.stack.x, TITLE.stack.y + 40);
+      GAME.levelCompleted = true;
+      GAME.score += GAME.timeBonus;
+      TITLE.score();
+      ENGINE.GAME.ANIMATION.next(ENGINE.KEY.waitFor.bind(null, GAME.nextLevel, "enter"));
     }
     GAME.timeLeft--;
+    GAME.timeLeft = Math.max(GAME.timeLeft, 0);
     GAME.timeBonus += INI.TIME_BONUS;
     TITLE.updateBonusTime();
   },
@@ -1274,12 +1242,12 @@ const TITLE = {
     ENGINE.clearLayer("time");
     var x = 632;
     var y = 72;
-    CTX.fillText(GAME.timeLeft.toString().padLeft(3, "0"), x, y);
+    CTX.fillText(GAME.timeLeft.toString().padStart(3, "0"), x, y);
   },
   levelEndRefresh() {
-    var CTX = LAYER.dyntext;
+    const CTX = LAYER.dyntext;
     ENGINE.clearLayer("dyntext");
-    var fs = 20;
+    const fs = 20;
     CTX.font = fs + "px Garamond";
     CTX.fillStyle = "#CCC";
     CTX.shadowColor = "yellow";
@@ -1287,44 +1255,26 @@ const TITLE = {
     CTX.shadowOffsetY = 1;
     CTX.shadowBlur = 0;
     CTX.textAlign = "left";
-    CTX.fillText(
-      "Time bonus: " + GAME.timeBonus.toString().padLeft(5, "0"),
-      TITLE.stack.x,
-      TITLE.stack.y
-    );
+    CTX.fillText("Time bonus: " + GAME.timeBonus.toString().padStart(5, "0"), TITLE.stack.x, TITLE.stack.y);
   },
   levelEndTemplate() {
-    var width = 350;
-    var height = 200;
-    var left = Math.floor((ENGINE.gameWIDTH - width) / 2);
-    var top = Math.floor((ENGINE.gameHEIGHT - height) / 2);
-    var CTX = LAYER.text;
+    const width = 350;
+    const height = 200;
+    const left = Math.floor((ENGINE.gameWIDTH - width) / 2);
+    const top = Math.floor((ENGINE.gameHEIGHT - height) / 2);
+    const CTX = LAYER.text;
     CTX.fillStyle = "#000";
     CTX.shadowColor = "#000";
     CTX.shadowOffsetX = 0;
     CTX.shadowOffsetY = 0;
     CTX.shadowBlur = 0;
     CTX.globalAlpha = 0.8;
-    CTX.roundRect(
-      left,
-      top,
-      width,
-      height,
-      {
-        upperLeft: 15,
-        upperRight: 15,
-        lowerLeft: 15,
-        lowerRight: 15
-      },
-      true,
-      true
-    );
-
+    CTX.roundRect(left, top, width, height, { upperLeft: 15, upperRight: 15, lowerLeft: 15, lowerRight: 15 }, true, true);
     CTX.textAlign = "center";
-    var fs = 20;
+    const fs = 20;
     CTX.font = fs + "px Garamond";
-    var y = top + fs * 1.5;
-    var x = ENGINE.gameWIDTH / 2;
+    let y = top + fs * 1.5;
+    let x = ENGINE.gameWIDTH / 2;
     CTX.fillStyle = "#CCC";
     CTX.shadowColor = "yellow";
     CTX.shadowOffsetX = 1;
@@ -1336,7 +1286,7 @@ const TITLE = {
     CTX.textAlign = "left";
     let lampBonus = HERO.lamp * INI.LAMP_BONUS || 0;
     GAME.score += lampBonus;
-    CTX.fillText("Lamp bonus: " + lampBonus.toString().padLeft(4, "0"), x, y);
+    CTX.fillText("Lamp bonus: " + lampBonus.toString().padStart(4, "0"), x, y);
     y += fs * 2;
     TITLE.stack.x = x;
     TITLE.stack.y = y;
