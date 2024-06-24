@@ -42,7 +42,7 @@ const INI = {
 };
 
 const PRG = {
-  VERSION: "1.04.08",
+  VERSION: "1.04.09",
   NAME: "Anxys",
   YEAR: "2018",
   CSS: "color: #239AFF;",
@@ -750,9 +750,11 @@ const GAME = {
     HERO.init();
     TITLE.key();
     BUMP2D.init(MAP[level].map);
+    BUMP2D.clearAll();
     VANISHING.init(MAP[level].map);
     CHANGING_ANIMATION.init(MAP[level].map);
     NEST.init(MAP[level].map);
+    NEST.clearAll();
     NEST.setIA();
     NEST.configure(INI.SPAWN_DELAY, GAME.canSpawn, GAME.spawn, HERO);
     console.info("NEST", NEST);
