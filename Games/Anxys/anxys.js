@@ -42,7 +42,7 @@ const INI = {
 };
 
 const PRG = {
-  VERSION: "1.05.00",
+  VERSION: "1.05.01",
   NAME: "Anxys",
   YEAR: "2018",
   CSS: "color: #239AFF;",
@@ -245,7 +245,6 @@ class Nest {
   outOfSight() {
     const minX = Math.floor(ENGINE.VIEWPORT.vx / ENGINE.INI.GRIDPIX) - INI.ENEMY_VISIBILITY_TOLERANCE;
     const maxX = minX + ENGINE.gameWIDTH / ENGINE.INI.GRIDPIX - 1 + INI.ENEMY_VISIBILITY_TOLERANCE;
-    //console.info("NEST OOS test", minX, maxX, "this.grid.x", this.grid.x, "ENGINE.VIEWPORT.vx", ENGINE.VIEWPORT.vx, "TEST", (this.grid.x <= minX || this.grid.x >= maxX));
     if (this.grid.x <= minX || this.grid.x >= maxX) return true;
     return false;
   }
@@ -339,17 +338,13 @@ class Enemy {
   outOfSight() {
     const minX = Math.floor(ENGINE.VIEWPORT.vx / ENGINE.INI.GRIDPIX) - INI.ENEMY_VISIBILITY_TOLERANCE;
     const maxX = minX + ENGINE.gameWIDTH / ENGINE.INI.GRIDPIX - 1 + INI.ENEMY_VISIBILITY_TOLERANCE;
-    //console.info("OOS test", minX, maxX, "this.moveState.homeGrid.x", this.moveState.homeGrid.x, "ENGINE.VIEWPORT.vx", ENGINE.VIEWPORT.vx);
     if (this.moveState.homeGrid.x <= minX || this.moveState.homeGrid.x >= maxX) return true;
     return false;
   }
   manage(lapsedTime, IA, map, hero) {
     this.setDistanceFromNodeMap(map.GA.nodeMap);
 
-    //trim those out of sight
-    const outOfSight = this.outOfSight();
-    if (outOfSight) {
-      //console.warn("enemy", this, "OOS");
+    if (this.outOfSight()) {
       ENEMY_TG.remove(this.id);
       return;
     }
@@ -359,7 +354,6 @@ class Enemy {
       GRID.translateMove(this, lapsedTime);
       return;
     }
-    //collission to HERO will be job of HERO
 
     //set behaviour
     this.behaviour.manage(this, this.distance, false);
@@ -525,13 +519,20 @@ const HERO = {
       HERO.pos = HERO.moveState.homeGrid;       // compatibility with MINIMAP
     }
   },
+  continueMove() {
+    if (HERO.lastDir) {
+      const nextGrid = HERO.moveState.endGrid.add(HERO.lastDir);
+      const valueNext = HERO.moveState.gridArray.getValue(nextGrid);
+      if (valueNext === MAPDICT.EMPTY) HERO.moveState.next(HERO.lastDir);
+    }
+    return;
+  },
   changeDirection(dir) {
     if (HERO.moveState.moving) return;
     const nextGrid = HERO.moveState.endGrid.add(dir);
 
     if (HERO.moveState.gridArray.isOutOfBounds(nextGrid)) {
       if (GRID.same(MAP[GAME.level].exit, HERO.moveState.homeGrid)) {
-        //console.error("EXIT level");
         GAME.levelEnd();
       }
       return;
@@ -539,12 +540,11 @@ const HERO = {
 
     if (HERO.moveState.gridArray.isEmpty(nextGrid)) {
       HERO.moveState.next(dir);
+      HERO.lastDir = dir;
     } else {
-
       const valueNext = HERO.moveState.gridArray.getValue(nextGrid);
       const valueThis = HERO.moveState.gridArray.getValue(HERO.moveState.startGrid);
       const IA = MAP[GAME.level].map[BUMP2D.IA];
-      //console.log("value nextGrid", valueNext, "this grid", valueThis);
 
       if (valueNext === MAPDICT.WALL && valueThis === MAPDICT.WARP) {
         //warp: next 1, this 32
@@ -568,7 +568,6 @@ const HERO = {
         }
       }
     }
-
   },
   draw() {
     if (!HERO.moved) return;
@@ -584,6 +583,7 @@ const HERO = {
     HERO.pos = null;
     HERO.hasKey = false;
     HERO.lamp = true;
+    HERO.lastDir = null;
   },
   init() {
     ENGINE.clearLayer("deadhero");
@@ -662,8 +662,8 @@ const GAME = {
     GAME.fps = new FPS_short_term_measurement(300);
     GAME.extraLife = SCORE.extraLife.clone();
     GAME.prepareForRestart();                             //everything required for safe restart
-    //GAME.level = 1;                                       //default
-    GAME.level = 10;                                       //debug
+    GAME.level = 1;                                       //default
+    //GAME.level = 10;                                       //debug
     GAME.score = 0;
     GAME.lives = 4;                                       //DEFAULT
     //GAME.lives = 1;                                     //debug
@@ -706,10 +706,8 @@ const GAME = {
     const typeName = DEFINE[GAME.level].enemy.chooseRandom();
     const type = EnemyList[typeName];
     const nest = NEST.show(id);
-    //console.log(".nest", nest);
     const enemy = new Enemy(nest.grid, nest.dir, type, typeName);
     ENEMY_TG.add(enemy);
-    //console.warn("spawning... from", id, "enemy", enemy);
   },
   timeIsUp() {
     console.error("TIME ENDS");
@@ -717,15 +715,16 @@ const GAME = {
   },
   nextLevel() {
     GAME.level++;
-    console.error("creating next level: ", GAME.level);
+    //console.error("creating next level: ", GAME.level);
     ENGINE.clearLayer("text");
     ENGINE.clearLayer("dyntext");
-    if (GAME.level > INI.LAST_LEVEL) {
+    //if (GAME.level > INI.LAST_LEVEL) {
+    if (GAME.level > 1) {
       ENGINE.GAME.stopAnimation = true;
       console.log("game have been won. please code the end you lazy bastard.");
       ENGINE.clearLayer("hero");
       TITLE.gameWon();
-      GAME.end();
+      //GAME.end();
     } else GAME.levelStart(GAME.level);
   },
   levelEnd() {
@@ -757,16 +756,12 @@ const GAME = {
     HERO.init();
     TITLE.key();
     BUMP2D.init(MAP[level].map);
-    //BUMP2D.clearAll();
     VANISHING.init(MAP[level].map);
-    //VANISHING.clearAll();
     CHANGING_ANIMATION.init(MAP[level].map);
     NEST.init(MAP[level].map);
     NEST.setIA();
     NEST.configure(INI.SPAWN_DELAY, GAME.canSpawn, GAME.spawn, HERO);
-    //console.info("NEST", NEST);
     FLOOR_OBJECT.init(MAP[level].map);
-    //FLOOR_OBJECT.clearAll();
     SPAWN.spawn(MAP[level]);
     BUMP2D.refresh();
     FLOOR_OBJECT.refresh();
@@ -783,7 +778,7 @@ const GAME = {
     await BITMAP.store(LAYER.floor.canvas, "maze");
 
     console.timeEnd("init");
-    console.log("MAP", MAP[level]);
+    //console.log("MAP", MAP[level]);
   },
   updateVieport() {
     if (!ENGINE.VIEWPORT.changed) return;
@@ -841,7 +836,6 @@ const GAME = {
     if (DEBUG.FPS) GAME.FPS(lapsedTime);
   },
   respond() {
-    //GAME.respond() template
     if (HERO.dead) return;
     const map = ENGINE.GAME.keymap;
 
@@ -854,7 +848,7 @@ const GAME = {
     //fall throught section
     if (map[ENGINE.KEY.map.F9]) {
       console.log("DEBUG:", HERO);
-      HERO.goto(new Grid(48, 6)); //exit
+      HERO.goto(new Grid(22, 9)); //exit
       HERO.hasKey = true; //DEBUG
     }
 
@@ -894,6 +888,9 @@ const GAME = {
       HERO.changeDirection(DOWN);
       return;
     }
+
+    if (!HERO.moveState.moving) HERO.continueMove();
+
   },
   setup() {
     console.log("GAME SETUP started");
@@ -1231,7 +1228,6 @@ const TITLE = {
   run(lapsedTime) {
     if (ENGINE.GAME.stopAnimation) return;
 
-    //VANISHING.manage(lapsedTime);
     CHANGING_ANIMATION.manage(lapsedTime);
     BALLISTIC_TG.manage(lapsedTime);
     DESTRUCTION_ANIMATION.manage(lapsedTime);
@@ -1255,11 +1251,9 @@ const TITLE = {
     TITLE.updateBonusTime();
     /** DRAW */
     ENGINE.clearLayerStack();
-    //VANISHING.draw();
     CHANGING_ANIMATION.draw();
     BALLISTIC_TG.draw();
     DESTRUCTION_ANIMATION.draw(lapsedTime);
-
   },
   updateBonusTime() {
     var CTX = LAYER.time;
@@ -1346,31 +1340,18 @@ const TITLE = {
     CTX.fillText("GAME OVER", x, y);
   },
   gameWon() {
-    var width = 350;
-    var height = 200;
-    var left = Math.floor((ENGINE.gameWIDTH - width) / 2);
-    var top = Math.floor((ENGINE.gameHEIGHT - height) / 2);
-    var CTX = LAYER.text;
+    const width = 800;
+    const height = 520;
+    const left = Math.floor((ENGINE.gameWIDTH - width) / 2);
+    const top = Math.floor((ENGINE.gameHEIGHT - height) / 2);
+    const CTX = LAYER.text;
     CTX.fillStyle = "#000";
     CTX.shadowColor = "#000";
     CTX.shadowOffsetX = 0;
     CTX.shadowOffsetY = 0;
     CTX.shadowBlur = 0;
-    CTX.globalAlpha = 0.8;
-    CTX.roundRect(
-      left,
-      top,
-      width,
-      height,
-      {
-        upperLeft: 15,
-        upperRight: 15,
-        lowerLeft: 15,
-        lowerRight: 15
-      },
-      true,
-      true
-    );
+    CTX.globalAlpha = 0.85;
+    CTX.roundRect(left, top, width, height, { upperLeft: 15, upperRight: 15, lowerLeft: 15, lowerRight: 15 }, true, true);
 
     CTX.textAlign = "center";
     var fs = 20;
@@ -1387,10 +1368,14 @@ const TITLE = {
     CTX.fillText("You have completed Anxys.", x, y);
     var delta = 54;
     y += delta;
-    var xS = ENGINE.spreadAroundCenter(4, x, delta);
-    for (var q = 0; q < 4; q++) {
+    const LN = TreasureList.length;
+    var xS = ENGINE.spreadAroundCenter(LN, x, delta);
+    for (var q = 0; q < LN; q++) {
       ENGINE.spriteDraw("text", xS[q], y, SPRITE[TreasureList[q]]);
     }
+    // final image
+    y += delta;
+    console.log("y", y, 576 - top, 576 - top - y);
   },
   music() {
     AUDIO.Title.play();
