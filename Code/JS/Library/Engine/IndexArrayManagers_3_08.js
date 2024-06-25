@@ -401,8 +401,6 @@ class FloorSpawner extends Floor_Object {
         this.reference = reference;
     }
     start() {
-        console.info("*********************");
-        console.info("NEST started")
         this.cooldown();
     }
     cooldown() {

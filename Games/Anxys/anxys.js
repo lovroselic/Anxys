@@ -14,7 +14,7 @@ const DEBUG = {
   INF_LIVES: true,
   INF_LAMPS: true,
   FPS: true,
-  GRID: true,
+  GRID: false,
   COORD: true,
   GOD: false,
 };
@@ -42,7 +42,7 @@ const INI = {
 };
 
 const PRG = {
-  VERSION: "1.05.01",
+  VERSION: "1.05.02",
   NAME: "Anxys",
   YEAR: "2018",
   CSS: "color: #239AFF;",
@@ -89,7 +89,7 @@ const PRG = {
     ENGINE.addBOX("DOWN", ENGINE.gameWIDTH, ENGINE.bottomHEIGHT, ["bottom", "lives", "lamp", "bottomText"]);
     ENGINE.addBOX("LEVEL", ENGINE.gameWIDTH, ENGINE.gameHEIGHT, ["floor", "wall", "nest", "template_static", "grid", "coord"]);
 
-    //$("#LEVEL").addClass("hidden");
+    $("#LEVEL").addClass("hidden");
   },
   start() {
     console.log(PRG.NAME + " started.");
@@ -101,9 +101,6 @@ const PRG = {
       }
     });
 
-
-    //
-    //GAME.start();
     TITLE.startTitle();
   }
 };
@@ -167,7 +164,6 @@ class Gate {
     ENGINE.draw('template_static', this.pos.x, this.pos.y, this.getSprite());
   }
   open() {
-    console.warn("open the door", this.id);
     this.GA.toEmpty(this.grid);
     BUMP2D.remove(this.id);
     BUMP2D.refresh();
@@ -415,7 +411,6 @@ class Laser {
         const enemy = ENEMY_TG.show(id);
         let hit = ENGINE.collisionRectangles(this, enemy.actor);
         if (hit) enemy.die();
-
       }
     }
   }
@@ -470,8 +465,6 @@ class Laser {
   }
 }
 
-/** */
-
 const HERO = {
   goto(grid) {
     this.moveState.reset(grid);
@@ -496,7 +489,6 @@ const HERO = {
     const IA = MAP[GAME.level].map[ENEMY_TG.IA]
     const id = IA.unroll(HERO.moveState.homeGrid);
     if (id.length) {
-      //console.warn("enemy collision to id", id);
       ENEMY_TG.remove(id);
       HERO.die();
     }
@@ -573,8 +565,6 @@ const HERO = {
     if (!HERO.moved) return;
     ENGINE.clearLayer("hero");
     if (HERO.dead) return;
-    //console.info("HERO draw", HERO, HERO.actor.vx, HERO.actor.vy, HERO.actor.sprite());
-    //console.info("vp", ENGINE.VIEWPORT);
     ENGINE.spriteDraw("hero", HERO.actor.vx, HERO.actor.vy, HERO.actor.sprite());
     HERO.moved = false;
   },
@@ -608,7 +598,6 @@ const HERO = {
     AUDIO.Buzz.play();
   },
   death() {
-    console.warn("HERO DIES");
     ENGINE.GAME.ANIMATION.stop();
     GAME.lives--;
     TITLE.lives();
@@ -630,11 +619,19 @@ const HERO = {
     AUDIO.Explosion.play();
     ENGINE.TIMERS.stop();
     ENGINE.TIMERS.remove(NEST.timerID);
+    HERO.deathPosition = HERO.moveState.homeGrid;
   },
   paintDeath() {
     ENGINE.clearLayer("hero");
     ENGINE.spriteDraw("deadhero", HERO.actor.vx, HERO.actor.vy, SPRITE.skull);
     DESTRUCTION_ANIMATION.add(new GeneralDestruction(new Point(HERO.actor.x, HERO.actor.y), "ShipExp"));
+  },
+  fromDyingPosition() {
+    GRID.gridToSprite(HERO.deathPosition, HERO.actor);
+    HERO.moveState.reset(HERO.deathPosition);
+    HERO.lastDir = null;
+    ENGINE.VIEWPORT.check(HERO.actor);
+    ENGINE.VIEWPORT.alignTo(HERO.actor);
   },
 };
 
@@ -649,9 +646,7 @@ const GAME = {
     $(ENGINE.topCanvas).off("click", ENGINE.mouseClick);
     $(ENGINE.topCanvas).css("cursor", "");
     ENGINE.hideMouse();
-    //AI.VERBOSE = true;
     AI.changeAdvancerToHuntImmediatelly();
-    //MINIMAP.verbose();
     MINIMAP.quiet();
 
     $("#pause").prop("disabled", false);
@@ -681,6 +676,7 @@ const GAME = {
   levelContinue() {
     console.log("LEVEL", GAME.level, "continues ...");
     HERO.init();
+    HERO.fromDyingPosition();
     ENEMY_TG.clearAll();
     BALLISTIC_TG.clearAll();
     ENGINE.TIMERS.start();
@@ -710,12 +706,10 @@ const GAME = {
     ENEMY_TG.add(enemy);
   },
   timeIsUp() {
-    console.error("TIME ENDS");
     HERO.canShoot = false;
   },
   nextLevel() {
     GAME.level++;
-    //console.error("creating next level: ", GAME.level);
     ENGINE.clearLayer("text");
     ENGINE.clearLayer("dyntext");
     //if (GAME.level > INI.LAST_LEVEL) {
@@ -729,7 +723,6 @@ const GAME = {
   },
   levelEnd() {
     GAME.timeLeft = Math.floor(ENGINE.TIMERS.access("gameTime").remains());
-    console.log("level ", GAME.level, " ended.", "GAME.timeLeft", GAME.timeLeft);
     HERO.canShoot = false;
     TITLE.levelEndTemplate();
     GAME.timeBonus = 0;
@@ -754,6 +747,7 @@ const GAME = {
     await ENGINE.TEXTUREGRID.draw(MAP[level].map);
 
     HERO.init();
+    HERO.deathPosition = null;
     TITLE.key();
     BUMP2D.init(MAP[level].map);
     VANISHING.init(MAP[level].map);
@@ -778,7 +772,6 @@ const GAME = {
     await BITMAP.store(LAYER.floor.canvas, "maze");
 
     console.timeEnd("init");
-    //console.log("MAP", MAP[level]);
   },
   updateVieport() {
     if (!ENGINE.VIEWPORT.changed) return;
@@ -788,17 +781,13 @@ const GAME = {
     ENGINE.VIEWPORT.changed = false;
   },
   updateStatic(level) {
-    console.info("updated static");
     level = level || GAME.level;
     ENGINE.clearLayer("template_static");
     BUMP2D.draw();
     FLOOR_OBJECT.draw();
-
     ENGINE.VIEWPORT.changed = true;
-
   },
   firstFrameDraw(level) {
-    console.log("drawing first frame");
     ENGINE.clearLayerStack();
     GAME.updateStatic(level);
     ENGINE.VIEWPORT.changed = true;
@@ -890,7 +879,6 @@ const GAME = {
     }
 
     if (!HERO.moveState.moving) HERO.continueMove();
-
   },
   setup() {
     console.log("GAME SETUP started");
@@ -986,7 +974,7 @@ const TITLE = {
   startTitle() {
     console.log("starting title");
     ENGINE.clearManylayers(["text", "lives", "lamp", "title", "minimap", "key", "score", "time", "deadhero"]);
-    //if (AUDIO.Title) TITLE.music();       //blocked for annoyance in devlopment
+    if (AUDIO.Title) TITLE.music();       //blocked for annoyance in devlopment
     TITLE.backs();
     ENGINE.draw("background", (ENGINE.gameWIDTH - TEXTURE.Title.width) / 2, (ENGINE.gameHEIGHT - TEXTURE.Title.height) / 2, TEXTURE.Title);
     TITLE.mainTitle();
@@ -1120,8 +1108,8 @@ const TITLE = {
   },
   stage() {
     var CTX = LAYER.title;
-    var x = 500;
-    var y = 32;
+    let x = 500;
+    let y = 32;
     ENGINE.draw("title", x, y, SPRITE.stage);
     CTX.font = "18px Consolas";
     CTX.fillStyle = "#000";
@@ -1142,13 +1130,13 @@ const TITLE = {
     ENGINE.draw("key", x, y + (h - SPRITE.key.height) / 2, SPRITE.key);
   },
   time() {
-    var x = 584;
-    var y = 32;
+    const x = 584;
+    const y = 32;
     ENGINE.draw("title", x, y, SPRITE.shield);
   },
   hiScore() {
-    var CTX = LAYER.title;
-    var fs = 16;
+    const CTX = LAYER.title;
+    const fs = 16;
     CTX.font = fs + "px Garamond";
     CTX.fillStyle = GAME.grad;
     CTX.shadowColor = "yellow";
@@ -1156,10 +1144,10 @@ const TITLE = {
     CTX.shadowOffsetY = 1;
     CTX.shadowBlur = 2;
     CTX.textAlign = "left";
-    var x = 700;
-    var y = 32 + fs;
-    var index = SCORE.SCORE.name[0].indexOf("&nbsp");
-    var HS;
+    const x = 700;
+    const y = 32 + fs;
+    const index = SCORE.SCORE.name[0].indexOf("&nbsp");
+    let HS;
     if (index > 0) {
       HS = SCORE.SCORE.name[0].substring(
         0,
@@ -1173,8 +1161,8 @@ const TITLE = {
   },
   score() {
     ENGINE.clearLayer("score");
-    var CTX = LAYER.score;
-    var fs = 32;
+    const CTX = LAYER.score;
+    const fs = 32;
     CTX.font = fs + "px Garamond";
     CTX.fillStyle = GAME.grad;
     CTX.shadowColor = "yellow";
@@ -1182,8 +1170,8 @@ const TITLE = {
     CTX.shadowOffsetY = 2;
     CTX.shadowBlur = 3;
     CTX.textAlign = "left";
-    var x = 700;
-    var y = 82;
+    const x = 700;
+    const y = 82;
     CTX.fillText("SCORE: " + GAME.score.toString().padStart(8, "0"), x, y);
     if (GAME.score >= GAME.extraLife[0]) {
       GAME.lives++;
@@ -1193,25 +1181,25 @@ const TITLE = {
   },
   lamp() {
     if (HERO.lamp) {
-      var CTX = LAYER.lamp;
-      var y = CTX.canvas.height / 2;
-      var x = 48;
+      const CTX = LAYER.lamp;
+      const y = CTX.canvas.height / 2;
+      const x = 48;
       ENGINE.spriteDraw("lamp", x, y, SPRITE.lamp);
     } else ENGINE.clearLayer("lamp");
   },
   lives() {
     ENGINE.clearLayer("lives");
-    var CTX = LAYER.lives;
-    var x = CTX.canvas.width / 2;
-    var y = CTX.canvas.height / 2;
-    var spread = ENGINE.spreadAroundCenter(GAME.lives, x, 32);
+    const CTX = LAYER.lives;
+    const x = CTX.canvas.width / 2;
+    const y = CTX.canvas.height / 2;
+    const spread = ENGINE.spreadAroundCenter(GAME.lives, x, 32);
     for (let q = 0; q < GAME.lives; q++) {
       ENGINE.spriteDraw("lives", spread[q], y, SPRITE.ghostLives);
     }
   },
   updateTime() {
     if (HERO.dead) return;
-    var CTX = LAYER.time;
+    const CTX = LAYER.time;
     ENGINE.clearLayer("time");
     CTX.font = "18px Consolas";
     CTX.fillStyle = "#000";
@@ -1220,8 +1208,8 @@ const TITLE = {
     CTX.shadowOffsetX = 1;
     CTX.shadowOffsetY = 1;
     CTX.shadowBlur = 2;
-    var x = 632;
-    var y = 72;
+    const x = 632;
+    const y = 72;
     const remains = Math.round(GAME.timer.remains()).toString().padStart(3, "0");
     CTX.fillText(remains, x, y);
   },
@@ -1234,8 +1222,8 @@ const TITLE = {
 
     TITLE.levelEndRefresh();
     if (GAME.timeLeft === 0) {
-      var CTX = LAYER.dyntext;
-      var fs = 18;
+      const CTX = LAYER.dyntext;
+      const fs = 18;
       CTX.font = fs + "px Garamond";
       CTX.fillStyle = "#F00";
       CTX.shadowColor = "#A00";
@@ -1256,10 +1244,10 @@ const TITLE = {
     DESTRUCTION_ANIMATION.draw(lapsedTime);
   },
   updateBonusTime() {
-    var CTX = LAYER.time;
+    const CTX = LAYER.time;
     ENGINE.clearLayer("time");
-    var x = 632;
-    var y = 72;
+    const x = 632;
+    const y = 72;
     CTX.fillText(GAME.timeLeft.toString().padStart(3, "0"), x, y);
   },
   levelEndRefresh() {
