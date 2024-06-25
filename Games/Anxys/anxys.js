@@ -1,21 +1,18 @@
-//console.clear();
 /////////////////////////////////////////////////
 /*
     
  to do:
 
  known bugs: 
- 
 
  */
 ////////////////////////////////////////////////////
 const DEBUG = {
-  FRAME: 0,
   INF_LIVES: true,
-  INF_LAMPS: true,
+  INF_LAMPS: false,
   FPS: true,
   GRID: false,
-  COORD: true,
+  COORD: false,
   GOD: false,
 };
 
@@ -42,7 +39,7 @@ const INI = {
 };
 
 const PRG = {
-  VERSION: "1.05.02",
+  VERSION: "1.05.03",
   NAME: "Anxys",
   YEAR: "2018",
   CSS: "color: #239AFF;",
@@ -544,7 +541,6 @@ const HERO = {
         const warp = BUMP2D.show(id);
         const orientation = GRID.same(dir, warp.dir.mirror());
         if (orientation) HERO.goto(warp.destination.waypoint);
-        //console.warn("warp", id, warp, orientation);
         return;
       }
       if (valueNext === MAPDICT.WALL + MAPDICT.DOOR) {
@@ -559,6 +555,7 @@ const HERO = {
           AUDIO.OpenGate.play();
         }
       }
+      HERO.lastDir = null;
     }
   },
   draw() {
@@ -572,7 +569,6 @@ const HERO = {
     HERO.speed = INI.HERO_SPEED;
     HERO.pos = null;
     HERO.hasKey = false;
-    HERO.lamp = true;
     HERO.lastDir = null;
   },
   init() {
@@ -586,6 +582,7 @@ const HERO = {
     HERO.moved = true;
     HERO.canShoot = true;
     HERO.dead = false;
+    HERO.lamp = true;
   },
   shoot(dir) {
     if (!HERO.canShoot) return;
@@ -658,7 +655,7 @@ const GAME = {
     GAME.extraLife = SCORE.extraLife.clone();
     GAME.prepareForRestart();                             //everything required for safe restart
     GAME.level = 1;                                       //default
-    //GAME.level = 10;                                       //debug
+    GAME.level = 3;                                       //debug
     GAME.score = 0;
     GAME.lives = 4;                                       //DEFAULT
     //GAME.lives = 1;                                     //debug
@@ -676,6 +673,7 @@ const GAME = {
   levelContinue() {
     console.log("LEVEL", GAME.level, "continues ...");
     HERO.init();
+    TITLE.lamp();
     HERO.fromDyingPosition();
     ENEMY_TG.clearAll();
     BALLISTIC_TG.clearAll();
@@ -712,13 +710,11 @@ const GAME = {
     GAME.level++;
     ENGINE.clearLayer("text");
     ENGINE.clearLayer("dyntext");
-    //if (GAME.level > INI.LAST_LEVEL) {
-    if (GAME.level > 1) {
+    if (GAME.level > INI.LAST_LEVEL) {
       ENGINE.GAME.stopAnimation = true;
-      console.log("game have been won. please code the end you lazy bastard.");
       ENGINE.clearLayer("hero");
       TITLE.gameWon();
-      //GAME.end();
+      GAME.completed();
     } else GAME.levelStart(GAME.level);
   },
   levelEnd() {
@@ -762,7 +758,7 @@ const GAME = {
     ENEMY_TG.init(MAP[level].map);
     BALLISTIC_TG.init(MAP[level].map);
     DESTRUCTION_ANIMATION.init(null);
-    MINIMAP.setOffset(164, 32);
+    MINIMAP.setOffset(110, 32);
     MINIMAP.init(MAP[level].map, 500 - 164, ENGINE.titleHEIGHT - 2 * 32, HERO);
 
     //drawing of statics
@@ -888,6 +884,11 @@ const GAME = {
     ENGINE.showMouse();
     AUDIO.Death.onended = GAME.checkScore;
     AUDIO.Death.play();
+  },
+  completed() {
+    console.info("GAME completed");
+    SCORE.checkScore(GAME.score);
+    SCORE.hiScore();
   },
   checkScore() {
     SCORE.checkScore(GAME.score);
@@ -1299,16 +1300,16 @@ const TITLE = {
   },
   gameOver() {
     ENGINE.clearLayer("text");
-    var CTX = LAYER.text;
+    const CTX = LAYER.text;
     CTX.textAlign = "center";
-    var x = ENGINE.gameWIDTH / 2;
-    var y = ENGINE.gameHEIGHT / 2;
-    var fs = 64;
+    const x = ENGINE.gameWIDTH / 2;
+    const y = ENGINE.gameHEIGHT / 2;
+    const fs = 64;
     CTX.font = fs + "px Garamond";
-    var txt = CTX.measureText("GAME OVER");
-    var gx = x - txt.width / 2;
-    var gy = y - fs;
-    var grad = CTX.createLinearGradient(gx, gy + 10, gx, gy + fs);
+    const txt = CTX.measureText("GAME OVER");
+    const gx = x - txt.width / 2;
+    const gy = y - fs;
+    const grad = CTX.createLinearGradient(gx, gy + 10, gx, gy + fs);
     grad.addColorStop("0", "#DDD");
     grad.addColorStop("0.1", "#EEE");
     grad.addColorStop("0.2", "#DDD");
@@ -1329,7 +1330,7 @@ const TITLE = {
   },
   gameWon() {
     const width = 800;
-    const height = 520;
+    const height = 540;
     const left = Math.floor((ENGINE.gameWIDTH - width) / 2);
     const top = Math.floor((ENGINE.gameHEIGHT - height) / 2);
     const CTX = LAYER.text;
@@ -1342,10 +1343,10 @@ const TITLE = {
     CTX.roundRect(left, top, width, height, { upperLeft: 15, upperRight: 15, lowerLeft: 15, lowerRight: 15 }, true, true);
 
     CTX.textAlign = "center";
-    var fs = 20;
+    const fs = 20;
     CTX.font = fs + "px Garamond";
-    var y = top + fs * 1.5;
-    var x = ENGINE.gameWIDTH / 2;
+    let y = top + fs * 1.5;
+    let x = ENGINE.gameWIDTH / 2;
     CTX.fillStyle = "#CCC";
     CTX.shadowColor = "yellow";
     CTX.shadowOffsetX = 1;
@@ -1361,9 +1362,12 @@ const TITLE = {
     for (var q = 0; q < LN; q++) {
       ENGINE.spriteDraw("text", xS[q], y, SPRITE[TreasureList[q]]);
     }
-    // final image
+    // final image 352?
     y += delta;
+    x = (ENGINE.gameWIDTH - TEXTURE.EndGame.width) / 2;
     console.log("y", y, 576 - top, 576 - top - y);
+    ENGINE.resetShadow(CTX);
+    ENGINE.draw("text", x, y, TEXTURE.EndGame);
   },
   music() {
     AUDIO.Title.play();

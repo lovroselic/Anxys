@@ -16,6 +16,7 @@ LoadTextures = [
   { srcName: "Wall/YellowBrick.jpg", name: "YellowBrick" },
   //title
   { srcName: "Title/AnxysTitle576.jpg", name: "Title" },
+  { srcName: "Title/AnxysEnd352.jpg", name: "EndGame" },
 ];
 
 LoadAudio = [
