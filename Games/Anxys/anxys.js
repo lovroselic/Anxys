@@ -42,7 +42,7 @@ const INI = {
 };
 
 const PRG = {
-  VERSION: "1.04.09",
+  VERSION: "1.05.00",
   NAME: "Anxys",
   YEAR: "2018",
   CSS: "color: #239AFF;",
@@ -242,6 +242,13 @@ class Nest {
   draw() {
     ENGINE.draw('nest', this.pos.x, this.pos.y, this.getSprite());
   }
+  outOfSight() {
+    const minX = Math.floor(ENGINE.VIEWPORT.vx / ENGINE.INI.GRIDPIX) - INI.ENEMY_VISIBILITY_TOLERANCE;
+    const maxX = minX + ENGINE.gameWIDTH / ENGINE.INI.GRIDPIX - 1 + INI.ENEMY_VISIBILITY_TOLERANCE;
+    //console.info("NEST OOS test", minX, maxX, "this.grid.x", this.grid.x, "ENGINE.VIEWPORT.vx", ENGINE.VIEWPORT.vx, "TEST", (this.grid.x <= minX || this.grid.x >= maxX));
+    if (this.grid.x <= minX || this.grid.x >= maxX) return true;
+    return false;
+  }
 }
 
 class FloorItem {
@@ -332,6 +339,7 @@ class Enemy {
   outOfSight() {
     const minX = Math.floor(ENGINE.VIEWPORT.vx / ENGINE.INI.GRIDPIX) - INI.ENEMY_VISIBILITY_TOLERANCE;
     const maxX = minX + ENGINE.gameWIDTH / ENGINE.INI.GRIDPIX - 1 + INI.ENEMY_VISIBILITY_TOLERANCE;
+    //console.info("OOS test", minX, maxX, "this.moveState.homeGrid.x", this.moveState.homeGrid.x, "ENGINE.VIEWPORT.vx", ENGINE.VIEWPORT.vx);
     if (this.moveState.homeGrid.x <= minX || this.moveState.homeGrid.x >= maxX) return true;
     return false;
   }
@@ -339,8 +347,9 @@ class Enemy {
     this.setDistanceFromNodeMap(map.GA.nodeMap);
 
     //trim those out of sight
-    const OoutOfSight = this.outOfSight();
-    if (OoutOfSight) {
+    const outOfSight = this.outOfSight();
+    if (outOfSight) {
+      //console.warn("enemy", this, "OOS");
       ENEMY_TG.remove(this.id);
       return;
     }
@@ -601,7 +610,6 @@ const HERO = {
   death() {
     console.warn("HERO DIES");
     ENGINE.GAME.ANIMATION.stop();
-    AUDIO.Explosion.play();
     GAME.lives--;
     TITLE.lives();
 
@@ -619,6 +627,7 @@ const HERO = {
     HERO.dead = true;
     HERO.canShoot = false;
     HERO.paintDeath();
+    AUDIO.Explosion.play();
     ENGINE.TIMERS.stop();
     ENGINE.TIMERS.remove(NEST.timerID);
   },
@@ -653,8 +662,8 @@ const GAME = {
     GAME.fps = new FPS_short_term_measurement(300);
     GAME.extraLife = SCORE.extraLife.clone();
     GAME.prepareForRestart();                             //everything required for safe restart
-    GAME.level = 1;                                       //default
-    //GAME.level = 2;                                       //debugz
+    //GAME.level = 1;                                       //default
+    GAME.level = 10;                                       //debug
     GAME.score = 0;
     GAME.lives = 4;                                       //DEFAULT
     //GAME.lives = 1;                                     //debug
@@ -680,7 +689,6 @@ const GAME = {
   },
   async levelStart(level) {
     console.log("starting level", level);
-    
     GAME.levelCompleted = false;
     ENGINE.VIEWPORT.reset();
     await GAME.initLevel(level);
@@ -712,8 +720,6 @@ const GAME = {
     console.error("creating next level: ", GAME.level);
     ENGINE.clearLayer("text");
     ENGINE.clearLayer("dyntext");
-
-
     if (GAME.level > INI.LAST_LEVEL) {
       ENGINE.GAME.stopAnimation = true;
       console.log("game have been won. please code the end you lazy bastard.");
@@ -728,6 +734,7 @@ const GAME = {
     HERO.canShoot = false;
     TITLE.levelEndTemplate();
     GAME.timeBonus = 0;
+    AUDIO.ClearLevel.play();
     ENGINE.GAME.ANIMATION.next(TITLE.run);
   },
   async initLevel(level) {
@@ -750,16 +757,16 @@ const GAME = {
     HERO.init();
     TITLE.key();
     BUMP2D.init(MAP[level].map);
-    BUMP2D.clearAll();
+    //BUMP2D.clearAll();
     VANISHING.init(MAP[level].map);
+    //VANISHING.clearAll();
     CHANGING_ANIMATION.init(MAP[level].map);
     NEST.init(MAP[level].map);
-    NEST.clearAll();
     NEST.setIA();
     NEST.configure(INI.SPAWN_DELAY, GAME.canSpawn, GAME.spawn, HERO);
-    console.info("NEST", NEST);
+    //console.info("NEST", NEST);
     FLOOR_OBJECT.init(MAP[level].map);
-    FLOOR_OBJECT.clearAll();
+    //FLOOR_OBJECT.clearAll();
     SPAWN.spawn(MAP[level]);
     BUMP2D.refresh();
     FLOOR_OBJECT.refresh();
@@ -818,7 +825,7 @@ const GAME = {
     GAME.respond();
     ENGINE.TIMERS.update();
     GAME.frameDraw(lapsedTime);
-    if (HERO.dead) IAM.checkIfProcessesComplete([DESTRUCTION_ANIMATION], HERO.death);
+    if (HERO.dead) IAM.checkIfProcessesComplete([DESTRUCTION_ANIMATION, VANISHING, CHANGING_ANIMATION], HERO.death);
   },
   frameDraw(lapsedTime) {
     ENGINE.clearLayerStack();
@@ -847,7 +854,7 @@ const GAME = {
     //fall throught section
     if (map[ENGINE.KEY.map.F9]) {
       console.log("DEBUG:", HERO);
-      HERO.goto(new Grid(22, 9)); //exit
+      HERO.goto(new Grid(48, 6)); //exit
       HERO.hasKey = true; //DEBUG
     }
 
@@ -1221,8 +1228,13 @@ const TITLE = {
     const remains = Math.round(GAME.timer.remains()).toString().padStart(3, "0");
     CTX.fillText(remains, x, y);
   },
-  run() {
+  run(lapsedTime) {
     if (ENGINE.GAME.stopAnimation) return;
+
+    //VANISHING.manage(lapsedTime);
+    CHANGING_ANIMATION.manage(lapsedTime);
+    BALLISTIC_TG.manage(lapsedTime);
+    DESTRUCTION_ANIMATION.manage(lapsedTime);
 
     TITLE.levelEndRefresh();
     if (GAME.timeLeft === 0) {
@@ -1241,6 +1253,13 @@ const TITLE = {
     GAME.timeLeft = Math.max(GAME.timeLeft, 0);
     GAME.timeBonus += INI.TIME_BONUS;
     TITLE.updateBonusTime();
+    /** DRAW */
+    ENGINE.clearLayerStack();
+    //VANISHING.draw();
+    CHANGING_ANIMATION.draw();
+    BALLISTIC_TG.draw();
+    DESTRUCTION_ANIMATION.draw(lapsedTime);
+
   },
   updateBonusTime() {
     var CTX = LAYER.time;

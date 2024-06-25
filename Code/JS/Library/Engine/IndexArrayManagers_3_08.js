@@ -355,7 +355,7 @@ class Floor_Object extends IAM {
         this.reIndexRequired = false;
     }
     init(map) {
-        if (!this.POOL) this.POOL = [];
+        this.POOL = [];
         this.linkMap(map);
         this.manage();
     }
@@ -417,7 +417,8 @@ class FloorSpawner extends Floor_Object {
     }
     selectNest() {
         /**
-         * sort by path distance, visibility not asserted
+         * sort by path distance, 
+         * visibility not asserted - that is a problem!
          * returns id of nest or null
          */
         let selected = null;
@@ -426,6 +427,7 @@ class FloorSpawner extends Floor_Object {
         GRID.calcDistancesBFS_A(refGrid, this.map)
 
         for (let nest of this.POOL) {
+            if (nest.outOfSight()) continue;
             let nestDistance = this.map.GA.nodeMap[nest.grid.x][nest.grid.y];
             nest.distance = nestDistance.distance;
             if (nest.distance < distance) {

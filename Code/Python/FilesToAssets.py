@@ -14,10 +14,10 @@ from glob import glob
 
 # Prefix = ''
 
-Directory = 'C:/Users/lovro/OneDrive/Documents/JS/Anxys/Assets/Graphics/Sprites/Items'
+# Directory = 'C:/Users/lovro/OneDrive/Documents/JS/Anxys/Assets/Graphics/Sprites/Items'
 # Directory = 'C:/Users/lovro/OneDrive/Documents/JS/Anxys/Assets/Graphics/RotatedSheetSequences'
-# Directory = 'C:/Users/lovro/OneDrive/Documents/JS/Anxys/Assets/Graphics/Textures/Wall'
-Prefix = 'Items/'
+Directory = 'C:/Users/lovro/OneDrive/Documents/JS/Anxys/Assets/Graphics/Textures/Wall'
+Prefix = 'Wall/'
 # Prefix = 'Wall/'
 # Prefix = ''
 files = []

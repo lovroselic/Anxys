@@ -2,8 +2,18 @@
 console.log("Assets for Anxys starting .....");
 
 LoadTextures = [
+  { srcName: "Wall/BlackWall.jpg", name: "BlackWall" },
   { srcName: "Wall/BrickWall.jpg", name: "BrickWall" },
   { srcName: "Wall/BrickWall4.jpg", name: "BrickWall4" },
+  { srcName: "Wall/DungeonFloor128.jpg", name: "DungeonFloor" },
+  { srcName: "Wall/DungeonWall128.jpg", name: "DungeonWall" },
+  { srcName: "Wall/DungeonWall3_128.jpg", name: "DungeonWall3" },
+  { srcName: "Wall/Pavement1_128.jpg", name: "Pavement" },
+  { srcName: "Wall/StoneFloor128.jpg", name: "StoneFloor" },
+  { srcName: "Wall/StoneWall.jpg", name: "StoneWall" },
+  { srcName: "Wall/StrangeWall.jpg", name: "StrangeWall" },
+  { srcName: "Wall/Tile5_48.png", name: "Tile5" },
+  { srcName: "Wall/YellowBrick.jpg", name: "YellowBrick" },
   //title
   { srcName: "Title/AnxysTitle576.jpg", name: "Title" },
 ];
