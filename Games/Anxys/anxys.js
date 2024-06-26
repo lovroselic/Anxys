@@ -39,7 +39,7 @@ const INI = {
 };
 
 const PRG = {
-  VERSION: "1.05.03",
+  VERSION: "1.05.04",
   NAME: "Anxys",
   YEAR: "2018",
   CSS: "color: #239AFF;",
@@ -431,10 +431,6 @@ class Laser {
   }
   manage(lapsedTime) {
     if (!this.finalX) this.finalX = this.checkFinal();
-    if (this.done) BALLISTIC_TG.remove(this.id);
-    const deltaTime = lapsedTime / 1000;
-    this.point.x += this.dir * INI.LASER_SPEED_MIN * deltaTime;
-    this.end.x += this.dir * INI.LASER_SPEED_MAX * deltaTime;
 
     const finalXConditions = {
       '-1': () => this.end.x < this.finalX,
@@ -445,6 +441,11 @@ class Laser {
       this.end.x = this.finalX;
       this.done = true;
     }
+
+    if (this.done) BALLISTIC_TG.remove(this.id);
+    const deltaTime = lapsedTime / 1000;
+    this.point.x += this.dir * INI.LASER_SPEED_MIN * deltaTime;
+    this.end.x += this.dir * INI.LASER_SPEED_MAX * deltaTime;
   }
   checkFinal() {
     const GA = this.parent.map.GA;
@@ -590,6 +591,7 @@ const HERO = {
     if (laserExists) return;
 
     const x = HERO.actor.x + ENGINE.INI.GRIDPIX / 4 * dir.x;
+    console.warn("LASER origin, ", new Point(x, HERO.actor.y), GRID.coordToGrid(x, HERO.actor.y));
     const laser = new Laser(new Point(x, HERO.actor.y), dir, this.moveState.homeGrid);
     BALLISTIC_TG.add(laser);
     AUDIO.Buzz.play();
@@ -655,7 +657,7 @@ const GAME = {
     GAME.extraLife = SCORE.extraLife.clone();
     GAME.prepareForRestart();                             //everything required for safe restart
     GAME.level = 1;                                       //default
-    GAME.level = 3;                                       //debug
+    GAME.level = 8;                                       //debug
     GAME.score = 0;
     GAME.lives = 4;                                       //DEFAULT
     //GAME.lives = 1;                                     //debug
