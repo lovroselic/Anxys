@@ -22,8 +22,8 @@ const DEFINE = {
   6: { time: 120, enemy: ["Snake", "Skeleton", "Skeleton", "ZombieGirl", "ZombieGirl", "Ghoul", "Ghoul", "Devil"] },
   7: { time: 60, enemy: ["Snake", "Skeleton", "Skeleton", "ZombieGirl", "ZombieGirl", "Ghoul", "Ghoul", "Devil", "Death1"] },
   8: { time: 90, enemy: ["Snake", "Skeleton", "ZombieGirl", "Ghoul", "Devil", "Death1", "Death2"] },
-  9: { time: 90, enemy: ["Ghoul", "Devil", "Death1", "Death2"] },
-  10: { time: 120, enemy: ["Devil", "Death1", "Death2"] },
+  9: { time: 90, enemy: ["Ghoul", "Devil", "Death1", "Death2", "Death1"] },
+  10: { time: 120, enemy: ["Devil", "Death1", "Death2", "Death1"] },
 };
 
 const SPAWN = {
@@ -117,7 +117,7 @@ const EnemyList = {
     score: 100
   },
   Death1: {
-    speed: 12,
+    speed: 8,
     foreSight: 10,
     score: 250
   },

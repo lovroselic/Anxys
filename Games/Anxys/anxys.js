@@ -8,9 +8,9 @@
  */
 ////////////////////////////////////////////////////
 const DEBUG = {
-  INF_LIVES: true,
+  INF_LIVES: false,
   INF_LAMPS: false,
-  FPS: true,
+  FPS: false,
   GRID: false,
   COORD: false,
   GOD: false,
@@ -19,7 +19,7 @@ const DEBUG = {
 const INI = {
   titleHeight: 120,
   bottomHeight: 40,
-  HERO_SPEED: 6,
+  HERO_SPEED: 8,
   MINI_PIX: 5,
   LASER_SPEED_MIN: 600,
   LASER_SPEED_MAX: 1200,
@@ -39,7 +39,7 @@ const INI = {
 };
 
 const PRG = {
-  VERSION: "1.05.04",
+  VERSION: "1.06",
   NAME: "Anxys",
   YEAR: "2018",
   CSS: "color: #239AFF;",
@@ -591,7 +591,6 @@ const HERO = {
     if (laserExists) return;
 
     const x = HERO.actor.x + ENGINE.INI.GRIDPIX / 4 * dir.x;
-    console.warn("LASER origin, ", new Point(x, HERO.actor.y), GRID.coordToGrid(x, HERO.actor.y));
     const laser = new Laser(new Point(x, HERO.actor.y), dir, this.moveState.homeGrid);
     BALLISTIC_TG.add(laser);
     AUDIO.Buzz.play();
@@ -657,7 +656,7 @@ const GAME = {
     GAME.extraLife = SCORE.extraLife.clone();
     GAME.prepareForRestart();                             //everything required for safe restart
     GAME.level = 1;                                       //default
-    GAME.level = 8;                                       //debug
+    //GAME.level = 10;                                       //debug
     GAME.score = 0;
     GAME.lives = 4;                                       //DEFAULT
     //GAME.lives = 1;                                     //debug
@@ -976,7 +975,7 @@ const GAME = {
 const TITLE = {
   startTitle() {
     console.log("starting title");
-    ENGINE.clearManylayers(["text", "lives", "lamp", "title", "minimap", "key", "score", "time", "deadhero"]);
+    ENGINE.clearManylayers(["text", "lives", "lamp", "title", "minimap", "key", "score", "time", "deadhero", "static"]);
     if (AUDIO.Title) TITLE.music();       //blocked for annoyance in devlopment
     TITLE.backs();
     ENGINE.draw("background", (ENGINE.gameWIDTH - TEXTURE.Title.width) / 2, (ENGINE.gameHEIGHT - TEXTURE.Title.height) / 2, TEXTURE.Title);
